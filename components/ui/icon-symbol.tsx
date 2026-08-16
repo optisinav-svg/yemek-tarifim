@@ -1,11 +1,11 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from "@expo/vector-icons/MaterialIcons";
-import { SymbolWeight, SymbolViewProps } from "expo-symbols";
+import { SymbolWeight } from "expo-symbols";
 import { ComponentProps } from "react";
 import { OpaqueColorValue, type StyleProp, type TextStyle } from "react-native";
 
-type IconMapping = Record<SymbolViewProps["name"], ComponentProps<typeof MaterialIcons>["name"]>;
+type IconMapping = Record<string, ComponentProps<typeof MaterialIcons>["name"]>;
 type IconSymbolName = keyof typeof MAPPING;
 
 /**
@@ -18,6 +18,36 @@ const MAPPING = {
   "paperplane.fill": "send",
   "chevron.left.forwardslash.chevron.right": "code",
   "chevron.right": "chevron-right",
+  "bookmark": "bookmark-border",
+  "bookmark.fill": "bookmark",
+  "search": "search",
+  "menu-book": "menu-book",
+  "timer": "timer",
+  "clock": "schedule",
+  "person": "person-outline",
+  "settings": "settings",
+  "arrow-left": "arrow-back",
+  "share": "share",
+  "add": "add",
+  "remove": "remove",
+  "shopping-cart": "shopping-cart",
+  "check": "check",
+  "play": "play-arrow",
+  "pause": "pause",
+  "home": "home",
+  "restaurant": "restaurant",
+  "soup-kitchen": "soup-kitchen",
+  "eco": "eco",
+  "cake": "cake",
+  "bakery-dining": "bakery-dining",
+  "local-cafe": "local-cafe",
+  "mic": "mic",
+  "translate": "translate",
+  "tune": "tune",
+  "close": "close",
+  "more": "more-horiz",
+  "delete": "delete-outline",
+  "edit": "edit",
 } as IconMapping;
 
 /**

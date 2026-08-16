@@ -1,17 +1,11 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
- * Extend this file with additional tables as your product grows.
  * Columns use camelCase to match both database fields and generated types.
  */
 export const users = mysqlTable("users", {
-  /**
-   * Surrogate primary key. Auto-incremented numeric value managed by the database.
-   * Use this for relations between tables.
-   */
   id: int("id").autoincrement().primaryKey(),
-  /** Manus OAuth identifier (openId) returned from the OAuth callback. Unique per user. */
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
   email: varchar("email", { length: 320 }),
@@ -22,7 +16,29 @@ export const users = mysqlTable("users", {
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
 });
 
+export const recipes = mysqlTable("recipes", {
+  id: int("id").autoincrement().primaryKey(),
+  authorId: int("authorId").notNull(),
+  countryCode: varchar("countryCode", { length: 8 }).default("TR").notNull(),
+  category: varchar("category", { length: 80 }).notNull(),
+  title: varchar("title", { length: 180 }).notNull(),
+  summary: text("summary"),
+  imageUrl: text("imageUrl"),
+  servings: int("servings").default(4).notNull(),
+  prepMinutes: int("prepMinutes").default(0).notNull(),
+  cookMinutes: int("cookMinutes").default(0).notNull(),
+  ingredientsJson: text("ingredientsJson").notNull(),
+  stepsJson: text("stepsJson").notNull(),
+  status: mysqlEnum("status", ["published", "hidden"]).default("published").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  countryCategoryIdx: index("recipes_country_category_idx").on(table.countryCode, table.category),
+  authorIdx: index("recipes_author_idx").on(table.authorId),
+  statusCreatedIdx: index("recipes_status_created_idx").on(table.status, table.createdAt),
+}));
+
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
-
-// TODO: Add your tables here
+export type Recipe = typeof recipes.$inferSelect;
+export type InsertRecipe = typeof recipes.$inferInsert;
