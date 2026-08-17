@@ -7,6 +7,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { categories, countries } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import * as Auth from "@/lib/_core/auth";
 import { trpc } from "@/lib/trpc";
 
 type PendingMedia = { uri: string; mediaType: "image" | "video"; mimeType: "image/jpeg" | "image/png" | "image/webp" | "video/mp4" | "video/quicktime"; fileName: string };
@@ -145,6 +146,15 @@ export default function CreateRecipeScreen() {
         return { name: name || item.trim(), amount, unit };
       });
 
+    const token = await Auth.getSessionToken();
+    if (!token) {
+      Alert.alert(
+        "Oturum Açılması Gerekir",
+        "Tarif yayınlamak için lütfen önce profil sekmesinden hesabınıza giriş yapın veya demo hesabı aktif edin.",
+        [{ text: "Tamam" }]
+      );
+      return;
+    }
     try {
       const uploadedMedia = [];
       for (const item of media) {
