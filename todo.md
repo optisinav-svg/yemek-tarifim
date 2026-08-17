@@ -206,3 +206,8 @@
 - [x] Sayaç widget’ını ekran içinde sürüklemek için dokunma alanını yeniden düzenlemek ve konum saklamasını doğrulamak
 - [x] En az 15 saniye süren, yüksek algılanan zırıltılı sayaç alarmı üretmek ve uygulamaya bağlamak
 - [x] Mutfak, yemek, lezzet, leziz, şef ve tarif kelimeleriyle marka adaylarını web, alan adı ve Google Play ön taramasından geçirmek
+## Kullanıcı geri bildirimi — son erteleme kararı (17.08.2026)
+
+- [ ] Sayaç zil sesi yüksekliği ve türü iyileştirmesi şimdilik ertelendi (mevcut standart uyarı sesi kullanılacak).
+- [ ] Sayaç penceresini sürükleyerek yer değiştirme özelliği şimdilik ertelendi (widget sağ üst köşede sabit kalacak).
+- [x] Mevcut tüm tamamlanmış özellikler GitHub deposuna aktarılacak.
