@@ -15,6 +15,12 @@ DOMAINS=(
   mutfakatlasi.com
   mutfakrotasi.com
   mutfakpusulasi.com
+  sefinmutfagi.com
+  mutfaksefi.com
+  sofrasefi.com
+  sefnotlari.com
+  sefyemekleri.com
+  seflezzet.com
 )
 for domain in "${DOMAINS[@]}"; do
   echo "=== $domain ==="

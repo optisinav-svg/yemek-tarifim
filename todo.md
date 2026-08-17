@@ -202,3 +202,4 @@
 - [ ] Konuşulanların dışından, .com ihtimali yüksek ve Google Play çakışması olmayan 5 yeni isim adayını üretmek ve araştırmasını yapmak
 - [x] Daha önce konuşulan tüm adları (Sofra Rotaları, Lezzet Haritası, Tarif Pusulası, Pişir Noktası, Tabak Defteri vb.) hariç tutarak 5 yeni isim adayını üretmek: Mutfak Atölyesi, Tencere Rotası, Pişirme Rehberi, Lezzet Laboratuvarı, Sofra Notları.
 - [x] mutfaksanatları.com adresini ve “mutfak” kelimesini içeren yeni özgün alan adı adaylarını araştırmak ve doğrulamak
+- [x] “Şef” kelimesini içeren mevcut web sitelerini, tarif platformlarını ve Google Play uygulamalarını araştırmak

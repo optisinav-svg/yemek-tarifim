@@ -1,0 +1,18 @@
+=== sefinmutfagi.com ===
+RDAP: REGISTERED
+DNS: 93.89.226.17    STREAM sefinmutfagi.com
+=== mutfaksefi.com ===
+RDAP: REGISTERED
+DNS: 141.98.112.218  STREAM mutfaksefi.com
+=== sofrasefi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== sefnotlari.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== sefyemekleri.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== seflezzet.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
