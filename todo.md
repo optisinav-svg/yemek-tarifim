@@ -203,3 +203,6 @@
 - [x] Daha önce konuşulan tüm adları (Sofra Rotaları, Lezzet Haritası, Tarif Pusulası, Pişir Noktası, Tabak Defteri vb.) hariç tutarak 5 yeni isim adayını üretmek: Mutfak Atölyesi, Tencere Rotası, Pişirme Rehberi, Lezzet Laboratuvarı, Sofra Notları.
 - [x] mutfaksanatları.com adresini ve “mutfak” kelimesini içeren yeni özgün alan adı adaylarını araştırmak ve doğrulamak
 - [x] “Şef” kelimesini içeren mevcut web sitelerini, tarif platformlarını ve Google Play uygulamalarını araştırmak
+- [x] Sayaç widget’ını ekran içinde sürüklemek için dokunma alanını yeniden düzenlemek ve konum saklamasını doğrulamak
+- [x] En az 15 saniye süren, yüksek algılanan zırıltılı sayaç alarmı üretmek ve uygulamaya bağlamak
+- [x] Mutfak, yemek, lezzet, leziz, şef ve tarif kelimeleriyle marka adaylarını web, alan adı ve Google Play ön taramasından geçirmek

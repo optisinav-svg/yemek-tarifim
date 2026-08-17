@@ -21,6 +21,27 @@ DOMAINS=(
   sefnotlari.com
   sefyemekleri.com
   seflezzet.com
+  lezzetizi.com
+  lezzetrotasi.com
+  lezzetpusulasi.com
+  lezzetkutugu.com
+  lezzetduragi.com
+  lezizrota.com
+  lezizsofra.com
+  yemekizi.com
+  yemekpusulasi.com
+  yemekrotasi.com
+  yemekkutugu.com
+  tarifizi.com
+  tarifrotasi.com
+  tarifpusulasi.com
+  tarifkutugu.com
+  tarifduragi.com
+  tarifatlasi.com
+  mutfakizleri.com
+  mutfakfisiltilari.com
+  sefrotasi.com
+  sefdokunusu.com
 )
 for domain in "${DOMAINS[@]}"; do
   echo "=== $domain ==="

@@ -1,0 +1,58 @@
+=== mutfaksanatlari.com ===
+RDAP: REGISTERED "status":["client transfer prohibited"] 
+DNS: NO_A_RECORD
+=== mutfakbahcesi.com ===
+RDAP: REGISTERED "status":["client delete prohibited" 
+DNS: 172.205.226.59  STREAM mutfakbahcesi.com
+=== mutfakyolculugu.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakkervani.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfaksofrasi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakizi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakhikayeleri.com ===
+RDAP: REGISTERED "status":["client delete prohibited" 
+DNS: 3.33.130.190    STREAM mutfakhikayeleri.com
+=== mutfakduragi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakkilavuzu.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakoykusu.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfaktarifi.com ===
+RDAP: REGISTERED "status":["client delete prohibited" 
+DNS: 92.205.2.34     STREAM mutfaktarifi.com
+=== mutfakatlasi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakrotasi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== mutfakpusulasi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== sefinmutfagi.com ===
+RDAP: REGISTERED "status":["active"] 
+DNS: 93.89.226.17    STREAM sefinmutfagi.com
+=== mutfaksefi.com ===
+RDAP: REGISTERED "status":["client transfer prohibited"] 
+DNS: 141.98.112.218  STREAM mutfaksefi.com
+=== sofrasefi.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== sefnotlari.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== sefyemekleri.com ===
+RDAP: NO_REGISTERED_RECORD_OR_UNAVAILABLE
+DNS: NO_A_RECORD
+=== seflezzet.com ===

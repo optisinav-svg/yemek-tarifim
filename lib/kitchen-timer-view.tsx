@@ -19,6 +19,15 @@ const WIDGET_HEIGHT = 52;
 
 let completionPlayer: ReturnType<typeof createAudioPlayer> | null = null;
 
+function stopCompletionChime() {
+  try {
+    completionPlayer?.pause();
+    completionPlayer?.seekTo(0);
+  } catch {
+    // The player may already be released on a platform without audio support.
+  }
+}
+
 async function playCompletionChime() {
   try {
     await setAudioModeAsync({
@@ -30,19 +39,14 @@ async function playCompletionChime() {
       shouldRouteThroughEarpiece: false,
     });
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
-    for (let i = 0; i < 5; i++) {
+    completionPlayer.volume = 1.0;
+    completionPlayer.seekTo(0);
+    completionPlayer.play();
+    if (Platform.OS !== "web") {
       try {
-        completionPlayer.seekTo(0);
-        completionPlayer.play();
+        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
       } catch {}
-      if (Platform.OS !== "web") {
-        try {
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        } catch {}
-      }
-      if (i < 4) {
-        await new Promise((resolve) => setTimeout(resolve, 3000));
-      }
     }
   } catch {
     // The visual completed state and haptic feedback remain available if audio is unavailable.
@@ -210,6 +214,7 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const start = useCallback(async (seconds?: number) => {
+    stopCompletionChime();
     const requestedSeconds = seconds !== undefined ? seconds : (state.remainingSeconds > 0 ? state.remainingSeconds : state.durationSeconds);
     const totalSeconds = Math.max(1, Math.round(requestedSeconds));
     await cancelNotification(state.notificationId);
@@ -231,16 +236,19 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
   }, [start, state.remainingSeconds]);
 
   const reset = useCallback(async () => {
+    stopCompletionChime();
     await cancelNotification(state.notificationId);
     setState(INITIAL_STATE);
   }, [cancelNotification, state.notificationId]);
 
   const dismiss = useCallback(async () => {
+    stopCompletionChime();
     await cancelNotification(state.notificationId);
     setState(INITIAL_STATE);
   }, [cancelNotification, state.notificationId]);
 
   const setPreset = useCallback(async (seconds: number) => {
+    stopCompletionChime();
     await cancelNotification(state.notificationId);
     const safeSeconds = Math.max(1, Math.round(seconds));
     setState({ durationSeconds: safeSeconds, remainingSeconds: safeSeconds, endsAt: null, notificationId: null, status: "idle" });
@@ -331,13 +339,15 @@ export function ActiveTimerWidget() {
     () =>
       PanResponder.create({
         onStartShouldSetPanResponder: () => true,
-        onMoveShouldSetPanResponder: (_event, gestureState) => Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
+        onStartShouldSetPanResponderCapture: () => true,
+        onMoveShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponderCapture: () => true,
         onPanResponderGrant: () => {
           didDragRef.current = false;
           dragStartRef.current = positionRef.current ?? defaultPosition;
         },
         onPanResponderMove: (_event, gestureState) => {
-          if (Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2) {
+          if (Math.abs(gestureState.dx) > 1 || Math.abs(gestureState.dy) > 1) {
             didDragRef.current = true;
           }
           const start = dragStartRef.current ?? defaultPosition;
@@ -373,28 +383,32 @@ export function ActiveTimerWidget() {
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
-      <Pressable
-        {...panResponder.panHandlers}
+      <View
         accessibilityRole="button"
-        accessibilityLabel={completed ? "Süre tamamlandı, uyarıyı kapatmak için kapat düğmesine dokunun" : "Aktif mutfak zamanlayıcısını aç veya taşımak için sürükle"}
-        accessibilityHint="Sayaç penceresini parmağınızla sürükleyerek ekran içinde taşıyabilirsiniz"
-        onPress={() => {
-          if (didDragRef.current) {
-            didDragRef.current = false;
-            return;
-          }
-          if (!completed) router.push("/timer");
-        }}
+        accessibilityLabel={completed ? "Süre tamamlandı, uyarıyı kapatmak için kapat düğmesine dokunun" : "Aktif mutfak zamanlayıcısı; gövdeden tutup taşımak için sürükleyin"}
+        accessibilityHint="Sayaç gövdesini parmağınızla tutup ekran içinde taşıyabilirsiniz. Kısa dokunuş zamanlayıcı ekranını açar."
         style={[
           styles.widget,
           { left: widgetPosition.x, top: widgetPosition.y, backgroundColor: completed ? colors.success : colors.foreground, borderColor: completed ? colors.success : colors.foreground },
         ]}
       >
-        <IconSymbol name={completed ? "check" : "timer"} size={16} color={completed ? "#FFFFFF" : colors.background} />
-        <View style={styles.widgetCopy}>
-          <Text style={styles.widgetTime}>{label}</Text>
-          <Text style={styles.widgetSubtitle}>{sublabel}</Text>
-        </View>
+        <Pressable
+          {...panResponder.panHandlers}
+          onPress={() => {
+            if (didDragRef.current) {
+              didDragRef.current = false;
+              return;
+            }
+            if (!completed) router.push("/timer");
+          }}
+          style={styles.widgetDragArea}
+        >
+          <IconSymbol name={completed ? "check" : "timer"} size={16} color={completed ? "#FFFFFF" : colors.background} />
+          <View style={styles.widgetCopy}>
+            <Text style={styles.widgetTime}>{label}</Text>
+            <Text style={styles.widgetSubtitle}>{sublabel}</Text>
+          </View>
+        </Pressable>
         {completed ? (
           <Pressable
             accessibilityRole="button"
@@ -416,13 +430,14 @@ export function ActiveTimerWidget() {
             <IconSymbol name={paused ? "play" : "pause"} size={15} color={colors.background} />
           </Pressable>
         )}
-      </Pressable>
+      </View>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  widget: { position: "absolute", zIndex: 20, elevation: 10, width: WIDGET_WIDTH, height: WIDGET_HEIGHT, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 17, paddingHorizontal: 11, shadowColor: "#000000", shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
+  widget: { position: "absolute", zIndex: 20, elevation: 10, width: WIDGET_WIDTH, height: WIDGET_HEIGHT, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 17, paddingHorizontal: 7, shadowColor: "#000000", shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
+  widgetDragArea: { flex: 1, minWidth: 0, height: "100%", flexDirection: "row", alignItems: "center", paddingHorizontal: 4 },
   widgetCopy: { flex: 1, marginHorizontal: 8 },
   widgetTime: { color: "#FFFFFF", fontSize: 14, fontWeight: "900", letterSpacing: 0.2 },
   widgetSubtitle: { color: "#FFF3E6", marginTop: 2, fontSize: 9, fontWeight: "700" },
