@@ -1,1 +1,229 @@
-export { default } from "../search";
+import { useState, useMemo } from "react";
+import { FlatList, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { ScreenContainer } from "@/components/screen-container";
+import { IconSymbol } from "@/components/ui/icon-symbol";
+import { useAppStore } from "@/lib/app-store";
+import { useColors } from "@/hooks/use-colors";
+import { getRecipes, categories, countries, type Recipe, type CountryCode } from "@/lib/recipe-data";
+import { useRouter } from "expo-router";
+
+const popularIngredients = ["Domates", "Soğan", "Sarımsak", "Zeytinyağı", "Tavuk", "Yumurta", "Peynir", "Un", "Pirinç", "Mercimek"];
+
+export default function SearchScreen() {
+  const colors = useColors();
+  const router = useRouter();
+  const { selectedCountry, setSelectedCountry, savedRecipeIds, toggleSaved } = useAppStore();
+
+  const [query, setQuery] = useState("");
+  const [selectedCategory, setSelectedCategory] = useState<string>("Tümü");
+  const [filterCountry, setFilterCountry] = useState<CountryCode | "ALL">(selectedCountry);
+  const [selectedIngredients, setSelectedIngredients] = useState<string[]>([]);
+  const [sortByMatch, setSortByMatch] = useState(false);
+
+  const toggleIngredient = (ing: string) => {
+    setSelectedIngredients((prev) =>
+      prev.includes(ing) ? prev.filter((i) => i !== ing) : [...prev, ing]
+    );
+  };
+
+  const results = useMemo(() => {
+    const countryParam = filterCountry === "ALL" ? "ALL" : filterCountry;
+    const categoryParam = selectedCategory === "Tümü" ? undefined : selectedCategory;
+    const baseRecipes = getRecipes(countryParam, categoryParam, query.trim() || undefined);
+
+    let filtered = baseRecipes;
+
+    if (selectedIngredients.length > 0) {
+      filtered = filtered.filter((recipe) => {
+        const recipeIngs = recipe.ingredients.map((i) => i.name.toLowerCase());
+        return selectedIngredients.some((sel) =>
+          recipeIngs.some((ri) => ri.includes(sel.toLowerCase()))
+        );
+      });
+    }
+
+    if (sortByMatch && selectedIngredients.length > 0) {
+      return [...filtered].sort((a, b) => {
+        const scoreA = a.ingredients.filter((i) =>
+          selectedIngredients.some((sel) => i.name.toLowerCase().includes(sel.toLowerCase()))
+        ).length;
+        const scoreB = b.ingredients.filter((i) =>
+          selectedIngredients.some((sel) => i.name.toLowerCase().includes(sel.toLowerCase()))
+        ).length;
+        return scoreB - scoreA;
+      });
+    }
+
+    return filtered;
+  }, [filterCountry, selectedCategory, query, selectedIngredients, sortByMatch]);
+
+  return (
+    <ScreenContainer className="px-5 pt-4" edges={["top", "left", "right"]}>
+      <View style={styles.header}>
+        <Text style={[styles.eyebrow, { color: colors.primary }]}>AKILLI TARİF BULUCU</Text>
+        <Text style={[styles.title, { color: colors.foreground }]}>Tarif ve Malzeme Ara</Text>
+      </View>
+
+      <View style={[styles.searchBox, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <IconSymbol name="search" size={20} color={colors.muted} />
+        <TextInput
+          style={[styles.input, { color: colors.foreground }]}
+          placeholder="Yemek adı, malzeme veya mutfak ara..."
+          placeholderTextColor={colors.muted}
+          value={query}
+          onChangeText={setQuery}
+          returnKeyType="search"
+        />
+        {query.length > 0 && (
+          <Pressable onPress={() => setQuery("")}>
+            <IconSymbol name="close" size={18} color={colors.muted} />
+          </Pressable>
+        )}
+      </View>
+
+      <View style={styles.filterSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          <Pressable
+            onPress={() => setFilterCountry("ALL")}
+            style={[styles.filterChip, { backgroundColor: filterCountry === "ALL" ? colors.primary : colors.surface, borderColor: colors.border }]}
+          >
+            <Text style={[styles.filterChipText, { color: filterCountry === "ALL" ? "#FFFFFF" : colors.foreground }]}>Tüm Ülkeler</Text>
+          </Pressable>
+          {countries.map((c) => (
+            <Pressable
+              key={c.code}
+              onPress={() => setFilterCountry(c.code)}
+              style={[styles.filterChip, { backgroundColor: filterCountry === c.code ? colors.primary : colors.surface, borderColor: colors.border }]}
+            >
+              <Text style={styles.chipFlag}>{c.flag}</Text>
+              <Text style={[styles.filterChipText, { color: filterCountry === c.code ? "#FFFFFF" : colors.foreground }]}>{c.name}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.filterSection}>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {["Tümü", ...categories.map((cat) => cat.name)].map((cat) => (
+            <Pressable
+              key={cat}
+              onPress={() => setSelectedCategory(cat)}
+              style={[styles.filterChip, { backgroundColor: selectedCategory === cat ? colors.foreground : colors.surface, borderColor: colors.border }]}
+            >
+              <Text style={[styles.filterChipText, { color: selectedCategory === cat ? colors.background : colors.foreground }]}>{cat}</Text>
+            </Pressable>
+          ))}
+        </ScrollView>
+      </View>
+
+      <View style={styles.ingredientSection}>
+        <Text style={[styles.sectionLabel, { color: colors.muted }]}>Elimde bu malzemeler var (Eşleştir):</Text>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
+          {popularIngredients.map((ing) => {
+            const active = selectedIngredients.includes(ing);
+            return (
+              <Pressable
+                key={ing}
+                onPress={() => toggleIngredient(ing)}
+                style={[styles.ingChip, { backgroundColor: active ? colors.primary + "22" : colors.surface, borderColor: active ? colors.primary : colors.border }]}
+              >
+                <Text style={[styles.ingText, { color: active ? colors.primary : colors.foreground }]}>
+                  {active ? "✓ " : "+ "} {ing}
+                </Text>
+              </Pressable>
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {selectedIngredients.length > 0 && (
+        <View style={styles.sortBar}>
+          <Text style={[styles.countText, { color: colors.muted }]}>{results.length} tarif bulundu</Text>
+          <Pressable
+            onPress={() => setSortByMatch(!sortByMatch)}
+            style={[styles.sortBtn, { backgroundColor: sortByMatch ? colors.primary : colors.surface, borderColor: colors.border }]}
+          >
+            <Text style={[styles.sortBtnText, { color: sortByMatch ? "#FFFFFF" : colors.foreground }]}>
+              {sortByMatch ? "Eşleşme Oranına Göre Sıralı" : "Eşleşmeye Göre Sırala"}
+            </Text>
+          </Pressable>
+        </View>
+      )}
+
+      <FlatList
+        data={results}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.resultsList}
+        ListEmptyComponent={
+          <View style={styles.empty}>
+            <IconSymbol name="search" size={40} color={colors.muted} />
+            <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Aradığınız kriterde tarif bulunamadı</Text>
+            <Text style={[styles.emptySubtitle, { color: colors.muted }]}>Farklı anahtar kelimeler deneyebilir veya malzeme seçimlerini esnetebilirsiniz.</Text>
+          </View>
+        }
+        renderItem={({ item }) => {
+          const isSaved = savedRecipeIds.includes(item.id);
+          return (
+            <Pressable
+              onPress={() => router.push(`/recipe/${item.id}` as any)}
+              style={[styles.recipeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
+            >
+              <View style={styles.cardHeader}>
+                <View style={styles.flagBadge}>
+                  <Text style={styles.flag}>{item.flag}</Text>
+                  <Text style={[styles.countryName, { color: colors.muted }]}>{item.countryName}</Text>
+                </View>
+                <Pressable onPress={() => toggleSaved(item.id)} style={styles.saveBtn}>
+                  <IconSymbol name={isSaved ? "bookmark.fill" : "bookmark"} size={18} color={isSaved ? colors.primary : colors.muted} />
+                </Pressable>
+              </View>
+              <Text style={[styles.recipeTitle, { color: colors.foreground }]}>{item.title}</Text>
+              <Text style={[styles.recipeSummary, { color: colors.muted }]} numberOfLines={2}>{item.summary}</Text>
+              <View style={styles.recipeFooter}>
+                <Text style={[styles.metaText, { color: colors.muted }]}>⏱ {item.prepMinutes + item.cookMinutes} dk</Text>
+                <Text style={[styles.metaText, { color: colors.muted }]}>🍽 {item.servings} porsiyon</Text>
+                <Text style={[styles.catBadge, { color: colors.primary }]}>{item.category}</Text>
+              </View>
+            </Pressable>
+          );
+        }}
+      />
+    </ScreenContainer>
+  );
+}
+
+const styles = StyleSheet.create({
+  header: { paddingTop: 10, paddingBottom: 12 },
+  eyebrow: { fontSize: 11, fontWeight: "800", letterSpacing: 1 },
+  title: { fontSize: 24, fontWeight: "900", marginTop: 2 },
+  searchBox: { flexDirection: "row", alignItems: "center", gap: 10, borderWidth: 1, borderRadius: 14, paddingHorizontal: 14, paddingVertical: 10, marginBottom: 12 },
+  input: { flex: 1, fontSize: 15, fontWeight: "600", padding: 0 },
+  filterSection: { marginBottom: 10 },
+  chipRow: { gap: 8, paddingVertical: 4 },
+  filterChip: { flexDirection: "row", alignItems: "center", gap: 6, borderWidth: 1, paddingHorizontal: 12, paddingVertical: 7, borderRadius: 20 },
+  chipFlag: { fontSize: 14 },
+  filterChipText: { fontSize: 13, fontWeight: "700" },
+  ingredientSection: { marginBottom: 10 },
+  sectionLabel: { fontSize: 12, fontWeight: "700", marginBottom: 6 },
+  ingChip: { borderWidth: 1, paddingHorizontal: 10, paddingVertical: 6, borderRadius: 16 },
+  ingText: { fontSize: 12, fontWeight: "700" },
+  sortBar: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 10 },
+  countText: { fontSize: 12, fontWeight: "600" },
+  sortBtn: { borderWidth: 1, paddingHorizontal: 10, paddingVertical: 5, borderRadius: 10 },
+  sortBtnText: { fontSize: 11, fontWeight: "700" },
+  resultsList: { gap: 12, paddingBottom: 32, paddingTop: 4 },
+  empty: { alignItems: "center", justifyContent: "center", paddingVertical: 48, paddingHorizontal: 24, gap: 10 },
+  emptyTitle: { fontSize: 16, fontWeight: "900", textAlign: "center" },
+  emptySubtitle: { fontSize: 13, fontWeight: "600", textAlign: "center", lineHeight: 18 },
+  recipeCard: { borderWidth: 1, borderRadius: 18, padding: 16, gap: 8 },
+  cardHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between" },
+  flagBadge: { flexDirection: "row", alignItems: "center", gap: 6 },
+  flag: { fontSize: 16 },
+  countryName: { fontSize: 12, fontWeight: "700" },
+  saveBtn: { padding: 4 },
+  recipeTitle: { fontSize: 17, fontWeight: "900" },
+  recipeSummary: { fontSize: 13, fontWeight: "500", lineHeight: 18 },
+  recipeFooter: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4, paddingTop: 8, borderTopWidth: 1, borderTopColor: "rgba(0,0,0,0.05)" },
+  metaText: { fontSize: 12, fontWeight: "600" },
+  catBadge: { fontSize: 12, fontWeight: "800" },
+});
