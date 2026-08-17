@@ -38,8 +38,10 @@
 - [x] Hazırlama, yapılış ve toplam süre alanlarını eklemek
 - [x] Tarife porsiyon sayısı eklemek
 - [x] En fazla üç fotoğraf ve video ekleme akışını oluşturmak
+- [x] Yayınlanmış tarif detayında yüklenen fotoğraf/video galerisini göstermek
 - [x] Fotoğraf/PDF/görselden metin aktarma için OCR akışını eklemek
 - [x] OCR sonucunu yayın öncesi düzenleme ve onay ekranından geçirmek
+- [x] Tarif ekleme ekranında görsel seçip OCR sonucunu başlık, ülke, malzeme ve adımlara aktarmak
 - [ ] Kullanıcının sistem klavyesiyle sesli yazma kullanımını desteklemek
 - [ ] Kullanıcı tariflerinin tüm kullanıcılarca görülebilmesini sağlamak
 - [x] Kullanıcının kendi tarifini düzenleyebilmesini sağlamak
@@ -52,7 +54,8 @@
 - [x] Malzemeye göre arama eklemek
 - [x] En fazla beş malzemeyle eşleşme oranına göre arama sonuçları oluşturmak
 - [x] Favorilere/listeme ekleme ve listeden çıkarma akışını eklemek
-- [ ] Tarif yorumları ve fotoğraflı deneme paylaşımı için veri modelini hazırlamak
+- [x] Tarif yorumları ve fotoğraflı deneme paylaşımı için veri modelini hazırlamak
+- [x] Tarif detayında yorum yazma ve fotoğraflı kullanıcı denemesi paylaşma akışını eklemek
 - [ ] Tarif puanlama ve raporlama kapsamını değerlendirmek
 
 ## Porsiyon ve ölçü birimleri
@@ -74,15 +77,17 @@
 - [x] Düz metin olarak sistem paylaşım menüsüne göndermek
 - [ ] Sonraki aşamada PDF/görsel dışa aktarma için mimariyi açık bırakmak
 
-## Pişirme ve zamanlayıcı
+## Pişirme modu ve zamanlayıcı
+
+- [x] Süre başlatıldığında ekranda her sayfada görünen kalıcı küçük sayaç (widget) ve bitişte sesli/titreşimli uyarı
 
 - [x] Adım adım pişirme modunu geliştirmek
 - [x] Pişirme modunda ekranı açık tutmak
 - [x] Büyük yazı ve kolay dokunma alanlarıyla sonraki/önceki adım gezinmesi eklemek
 - [x] Saat ve dakika için dairesel zamanlayıcı arayüzü oluşturmak
-- [ ] Zamanlayıcı çalışırken tüm ekranlarda yüzen kalan süre göstergesi eklemek
-- [ ] Süre bitiminde uygulama içi sesli/işitsel uyarı eklemek
-- [ ] Arka plan bildirimleri için platform uygunluğunu doğrulamak
+- [x] Zamanlayıcı çalışırken tüm ekranlarda yüzen kalan süre göstergesi eklemek
+- [x] Süre bitiminde uygulama içi sesli/işitsel uyarı eklemek
+- [x] Arka plan bildirimleri için platform uygunluğunu doğrulamak
 
 ## Dil, tema ve profil
 
@@ -115,7 +120,7 @@
 
 - [x] İlk çalışan sürümü `optisinav-svg/yemek-tarifim` GitHub deposunun `main` dalına göndermek (commit: `9eb3136`, 17.08.2026)
 - [ ] Sonraki geliştirmelerde GitHub’a düzenli commit ve sürüm etiketleri eklemek
-- [ ] Expo Go QR önizleme bağlantısını telefon üzerinde doğrulamak ve bağlantı sorununu gidermek
+- [x] Expo Go QR önizleme bağlantısını telefon üzerinde doğrulamak ve bağlantı sorununu gidermek
 
 ## Sonraki aşama: kullanıcı hesabı ve sunucu senkronizasyonu
 

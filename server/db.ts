@@ -1,6 +1,6 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRecipe, InsertSavedRecipe, InsertShoppingItem, InsertUser, recipes, savedRecipes, shoppingItems, users } from "../drizzle/schema";
+import { InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, recipeAttempts, recipeComments, recipeMedia, recipes, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -77,6 +77,67 @@ export async function createRecipe(data: InsertRecipe) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const result = await db.insert(recipes).values(data);
+  return (result as unknown as { insertId: number }).insertId;
+}
+
+export async function createRecipeMedia(data: InsertRecipeMedia) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(recipeMedia).values(data);
+  return (result as unknown as { insertId: number }).insertId;
+}
+
+export async function listRecipeMedia(recipeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(recipeMedia).where(eq(recipeMedia.recipeId, recipeId)).orderBy(recipeMedia.sortOrder, recipeMedia.createdAt);
+}
+
+export async function listRecipeComments(recipeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: recipeComments.id,
+    recipeId: recipeComments.recipeId,
+    body: recipeComments.body,
+    createdAt: recipeComments.createdAt,
+    authorId: recipeComments.authorId,
+    authorName: users.name,
+  }).from(recipeComments)
+    .leftJoin(users, eq(recipeComments.authorId, users.id))
+    .where(and(eq(recipeComments.recipeId, recipeId), eq(recipeComments.status, "visible")))
+    .orderBy(desc(recipeComments.createdAt));
+}
+
+export async function createRecipeComment(data: InsertRecipeComment) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(recipeComments).values(data);
+  return (result as unknown as { insertId: number }).insertId;
+}
+
+export async function listRecipeAttempts(recipeId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: recipeAttempts.id,
+    recipeId: recipeAttempts.recipeId,
+    caption: recipeAttempts.caption,
+    imageUrl: recipeAttempts.imageUrl,
+    imageMimeType: recipeAttempts.imageMimeType,
+    createdAt: recipeAttempts.createdAt,
+    authorId: recipeAttempts.authorId,
+    authorName: users.name,
+  }).from(recipeAttempts)
+    .leftJoin(users, eq(recipeAttempts.authorId, users.id))
+    .where(and(eq(recipeAttempts.recipeId, recipeId), eq(recipeAttempts.status, "visible")))
+    .orderBy(desc(recipeAttempts.createdAt));
+}
+
+export async function createRecipeAttempt(data: InsertRecipeAttempt) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(recipeAttempts).values(data);
   return (result as unknown as { insertId: number }).insertId;
 }
 

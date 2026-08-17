@@ -7,6 +7,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getRecipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import { formatTimer, useKitchenTimer } from "@/lib/kitchen-timer";
 
 export default function CookingModeScreen() {
   const colors = useColors();
@@ -14,14 +15,18 @@ export default function CookingModeScreen() {
   const { id } = useLocalSearchParams<{ id?: string }>();
   const recipe = getRecipe(id || "");
   const [stepIndex, setStepIndex] = useState(0);
-  const [timerSeconds, setTimerSeconds] = useState(0);
+  const { remainingSeconds, status: timerStatus, addMinutes, start } = useKitchenTimer();
   const currentStep = recipe?.steps[stepIndex] ?? "";
   const progress = useMemo(() => recipe ? (stepIndex + 1) / recipe.steps.length : 0, [recipe, stepIndex]);
 
   if (!recipe) return <ScreenContainer className="items-center justify-center"><Text style={[styles.title, { color: colors.foreground }]}>Tarif bulunamadı.</Text></ScreenContainer>;
 
-  const addTimer = (minutes: number) => setTimerSeconds((current) => current + minutes * 60);
-  const timerLabel = timerSeconds > 0 ? `${Math.floor(timerSeconds / 60)}:${String(timerSeconds % 60).padStart(2, "0")}` : "Zamanlayıcı";
+  const addTimer = async (minutes: number) => {
+    const nextSeconds = remainingSeconds + minutes * 60;
+    await addMinutes(minutes);
+    if (timerStatus !== "running" && timerStatus !== "paused") await start(nextSeconds);
+  };
+  const timerLabel = remainingSeconds > 0 ? formatTimer(remainingSeconds) : "Zamanlayıcı";
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right", "bottom"]}>
@@ -33,7 +38,7 @@ export default function CookingModeScreen() {
         <View style={[styles.stepCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.stepBadge, { backgroundColor: colors.primary }]}><Text style={styles.stepBadgeText}>{stepIndex + 1}</Text></View><Text style={[styles.stepText, { color: colors.foreground }]}>{currentStep}</Text></View>
         <View style={styles.navigation}><Pressable disabled={stepIndex === 0} onPress={() => setStepIndex((current) => Math.max(0, current - 1))} style={[styles.navButton, { borderColor: colors.border, opacity: stepIndex === 0 ? 0.35 : 1 }]}><IconSymbol name="arrow-left" size={19} color={colors.foreground} /><Text style={[styles.navText, { color: colors.foreground }]}>Önceki</Text></Pressable><Pressable onPress={() => setStepIndex((current) => Math.min(recipe.steps.length - 1, current + 1))} style={[styles.navButton, { backgroundColor: colors.primary, borderColor: colors.primary, opacity: stepIndex === recipe.steps.length - 1 ? 0.6 : 1 }]}><Text style={styles.nextText}>{stepIndex === recipe.steps.length - 1 ? "Tamamlandı" : "Sonraki"}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable></View>
         <View style={styles.timerSection}><View><Text style={[styles.timerTitle, { color: colors.foreground }]}>Mutfak zamanlayıcısı</Text><Text style={[styles.timerHint, { color: colors.muted }]}>Pişirme süreni kaçırma</Text></View><View style={[styles.timerPill, { backgroundColor: colors.background, borderColor: colors.border }]}><IconSymbol name="timer" size={17} color={colors.primary} /><Text style={[styles.timerLabel, { color: colors.foreground }]}>{timerLabel}</Text></View></View>
-        <View style={styles.timerButtons}>{[5, 10, 20].map((minutes) => <Pressable key={minutes} onPress={() => addTimer(minutes)} style={[styles.timerButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.timerButtonText, { color: colors.foreground }]}>+{minutes} dk</Text></Pressable>)}</View>
+        <View style={styles.timerButtons}>{[5, 10, 20].map((minutes) => <Pressable key={minutes} onPress={() => void addTimer(minutes)} style={[styles.timerButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><Text style={[styles.timerButtonText, { color: colors.foreground }]}>+{minutes} dk</Text></Pressable>)}</View>
       </View>
       <View style={[styles.footerNote, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="check" size={17} color={colors.success} /><Text style={[styles.footerText, { color: colors.muted }]}>Ekran açık kalır; tarifine odaklanabilirsin.</Text></View>
     </ScreenContainer>

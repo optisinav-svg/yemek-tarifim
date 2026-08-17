@@ -42,6 +42,7 @@ const MAPPING = {
   "bakery-dining": "bakery-dining",
   "local-cafe": "local-cafe",
   "mic": "mic",
+  "camera": "photo-camera",
   "translate": "translate",
   "tune": "tune",
   "close": "close",

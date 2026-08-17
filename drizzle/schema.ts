@@ -40,6 +40,56 @@ export const recipes = mysqlTable("recipes", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+
+export const recipeMedia = mysqlTable("recipe_media", {
+  id: int("id").autoincrement().primaryKey(),
+  recipeId: int("recipeId").notNull(),
+  authorId: int("authorId").notNull(),
+  mediaType: mysqlEnum("mediaType", ["image", "video"]).notNull(),
+  url: text("url").notNull(),
+  mimeType: varchar("mimeType", { length: 120 }).notNull(),
+  sortOrder: int("sortOrder").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  recipeIdx: index("recipe_media_recipe_idx").on(table.recipeId, table.sortOrder),
+  authorIdx: index("recipe_media_author_idx").on(table.authorId),
+}));
+
+export type RecipeMedia = typeof recipeMedia.$inferSelect;
+export type InsertRecipeMedia = typeof recipeMedia.$inferInsert;
+
+export const recipeComments = mysqlTable("recipe_comments", {
+  id: int("id").autoincrement().primaryKey(),
+  recipeId: int("recipeId").notNull(),
+  authorId: int("authorId").notNull(),
+  body: varchar("body", { length: 1200 }).notNull(),
+  status: mysqlEnum("status", ["visible", "hidden"]).default("visible").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  recipeCreatedIdx: index("recipe_comments_recipe_created_idx").on(table.recipeId, table.createdAt),
+  authorIdx: index("recipe_comments_author_idx").on(table.authorId),
+}));
+
+export const recipeAttempts = mysqlTable("recipe_attempts", {
+  id: int("id").autoincrement().primaryKey(),
+  recipeId: int("recipeId").notNull(),
+  authorId: int("authorId").notNull(),
+  caption: varchar("caption", { length: 600 }),
+  imageUrl: text("imageUrl").notNull(),
+  imageMimeType: varchar("imageMimeType", { length: 120 }).notNull(),
+  status: mysqlEnum("status", ["visible", "hidden"]).default("visible").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  recipeCreatedIdx: index("recipe_attempts_recipe_created_idx").on(table.recipeId, table.createdAt),
+  authorIdx: index("recipe_attempts_author_idx").on(table.authorId),
+}));
+
+export type RecipeComment = typeof recipeComments.$inferSelect;
+export type InsertRecipeComment = typeof recipeComments.$inferInsert;
+export type RecipeAttempt = typeof recipeAttempts.$inferSelect;
+export type InsertRecipeAttempt = typeof recipeAttempts.$inferInsert;
+
 export const savedRecipes = mysqlTable("saved_recipes", {
   id: int("id").autoincrement().primaryKey(),
   userId: int("userId").notNull(),

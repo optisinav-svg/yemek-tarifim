@@ -22,6 +22,20 @@
       "when": 1786959622099,
       "tag": "0002_zippy_randall_flagg",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "5",
+      "when": 1786962346634,
+      "tag": "0003_mysterious_sway",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "5",
+      "when": 1786963312887,
+      "tag": "0004_classy_earthquake",
+      "breakpoints": true
     }
   ]
 }
