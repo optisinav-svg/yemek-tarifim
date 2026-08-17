@@ -41,7 +41,7 @@
 - [ ] OCR sonucunu yayın öncesi düzenleme ve onay ekranından geçirmek
 - [ ] Kullanıcının sistem klavyesiyle sesli yazma kullanımını desteklemek
 - [ ] Kullanıcı tariflerinin tüm kullanıcılarca görülebilmesini sağlamak
-- [ ] Kullanıcının kendi tarifini düzenleyebilmesini sağlamak
+- [x] Kullanıcının kendi tarifini düzenleyebilmesini sağlamak
 - [ ] Tarif paylaşımını sistem paylaşım menüsüyle düz metin ve medya bağlantısı olarak eklemek
 - [ ] Günlük tarif ekleme sınırını sunucu tarafında uygulamak
 

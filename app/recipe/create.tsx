@@ -6,6 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { categories } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
 
 const defaultIngredients = ["", "", ""];
 const defaultSteps = ["", ""];
@@ -21,7 +22,17 @@ export default function CreateRecipeScreen() {
   const [cookMinutes, setCookMinutes] = useState("30");
   const [ingredients, setIngredients] = useState(defaultIngredients);
   const [steps, setSteps] = useState(defaultSteps);
-  const canSave = title.trim().length > 2 && ingredients.some((item) => item.trim()) && steps.some((item) => item.trim());
+  const utils = trpc.useUtils();
+  const createMutation = trpc.recipes.create.useMutation({
+    onSuccess: () => {
+      void utils.recipes.list.invalidate();
+      Alert.alert("Başarılı", "Tarifiniz yayınlandı ve listeye eklendi.", [{ text: "Tamam", onPress: () => router.back() }]);
+    },
+    onError: (err) => {
+      Alert.alert("Hata", err.message || "Tarif kaydedilemedi. Lütfen giriş yaptığınızdan emin olun.");
+    },
+  });
+  const canSave = title.trim().length > 2 && ingredients.some((item) => item.trim()) && steps.some((item) => item.trim()) && !createMutation.isPending;
 
   const updateIngredient = (index: number, value: string) => setIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? value : item));
   const updateStep = (index: number, value: string) => setSteps((current) => current.map((item, itemIndex) => itemIndex === index ? value : item));
@@ -34,7 +45,27 @@ export default function CreateRecipeScreen() {
       Alert.alert("Eksik bilgi", "Tarif adı, en az bir malzeme ve bir yapılış adımı ekleyin.");
       return;
     }
-    Alert.alert("Tarif taslağı hazır", "Tarif formu hazırlandı. Sunucu bağlantısı tamamlandığında yayınlama akışına aktarılacak.", [{ text: "Tamam", onPress: () => router.back() }]);
+    const formattedIngredients = ingredients
+      .filter((item) => item.trim().length > 0)
+      .map((item) => {
+        const parts = item.trim().split(" ");
+        const amount = parts[0] || "1";
+        const unit = parts.length > 1 ? parts[1] || "adet" : "adet";
+        const name = parts.length > 2 ? parts.slice(2).join(" ") : parts[1] || item.trim();
+        return { name: name || item.trim(), amount, unit };
+      });
+
+    createMutation.mutate({
+      countryCode: "TR",
+      category,
+      title: title.trim(),
+      summary: summary.trim() || undefined,
+      servings: Number(servings) || 4,
+      prepMinutes: Number(prepMinutes) || 15,
+      cookMinutes: Number(cookMinutes) || 30,
+      ingredients: formattedIngredients,
+      steps: steps.filter((step) => step.trim().length > 0),
+    });
   };
 
   return (
@@ -52,7 +83,7 @@ export default function CreateRecipeScreen() {
           <SectionLabel title="Yapılışı" hint="Adımları sırayla yaz" colors={colors} />
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{steps.map((step, index) => <View key={index} style={styles.stepInputRow}><View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>{index + 1}</Text></View><TextInput value={step} onChangeText={(value) => updateStep(index, value)} placeholder="Bu adımda ne yapılır?" placeholderTextColor={colors.muted} style={[styles.stepInput, { color: colors.foreground }]} multiline />{steps.length > 1 && <Pressable onPress={() => setSteps((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addStep} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Adım ekle</Text></Pressable></View>
           <View style={[styles.mediaHint, { backgroundColor: "#FFF0DD" }]}><IconSymbol name="add" size={18} color={colors.primary} /><View style={{ flex: 1 }}><Text style={[styles.mediaTitle, { color: colors.foreground }]}>Fotoğraf ve video ekle</Text><Text style={[styles.mediaText, { color: colors.muted }]}>Tarifini en fazla 3 görselle zenginleştir.</Text></View></View>
-          <Pressable onPress={handleSave} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>Tarifi taslak olarak kaydet</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
+          <Pressable onPress={handleSave} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>{createMutation.isPending ? "Yayınlanıyor..." : "Tarifi yayınla"}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
