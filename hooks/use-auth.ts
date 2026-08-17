@@ -32,6 +32,9 @@ export function useAuth(options?: UseAuthOptions) {
             name: apiUser.name,
             email: apiUser.email,
             loginMethod: apiUser.loginMethod,
+            imageUrl: apiUser.imageUrl,
+            role: apiUser.role ?? "user",
+            accountStatus: apiUser.accountStatus ?? "active",
             lastSignedIn: new Date(apiUser.lastSignedIn),
           };
           setUser(userInfo);
@@ -64,7 +67,7 @@ export function useAuth(options?: UseAuthOptions) {
       console.log("[useAuth] Cached user:", cachedUser);
       if (cachedUser) {
         console.log("[useAuth] Using cached user info");
-        setUser(cachedUser);
+        setUser({ ...cachedUser, role: cachedUser.role ?? "user", accountStatus: cachedUser.accountStatus ?? "active" });
       } else {
         console.log("[useAuth] No cached user, setting user to null");
         setUser(null);
@@ -109,7 +112,7 @@ export function useAuth(options?: UseAuthOptions) {
           console.log("[useAuth] Native cached user check:", cachedUser);
           if (cachedUser) {
             console.log("[useAuth] Native: setting cached user immediately");
-            setUser(cachedUser);
+            setUser({ ...cachedUser, role: cachedUser.role ?? "user", accountStatus: cachedUser.accountStatus ?? "active" });
             setLoading(false);
           } else {
             // No cached user, check session token

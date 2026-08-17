@@ -19,6 +19,7 @@ type ServerRecipeResponse = {
   category: string;
   title: string;
   summary: string | null;
+  tip: string | null;
   imageUrl: string | null;
   servings: number;
   prepMinutes: number;
@@ -88,7 +89,7 @@ function toDisplayRecipe(serverRecipe: ServerRecipeResponse, fallback: Recipe | 
     summary: serverRecipe.summary ?? "Topluluk tarafından paylaşılan tarif.",
     ingredients: parseServerIngredients(serverRecipe.ingredients),
     steps: parseServerSteps(serverRecipe.steps),
-    tip: "Malzeme ve adımları tarife göre uygulayın.",
+    tip: serverRecipe.tip?.trim() || fallback?.tip || "Tarifin inceliğini ve dikkat edilmesi gerekenleri tarife göre uygulayın.",
     createdAt: serverRecipe.createdAt instanceof Date ? serverRecipe.createdAt.toISOString() : String(serverRecipe.createdAt),
   };
 }

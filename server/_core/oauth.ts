@@ -48,6 +48,9 @@ function buildUserResponse(
         name?: string | null;
         email?: string | null;
         loginMethod?: string | null;
+        imageUrl?: string | null;
+        role?: "user" | "admin";
+        accountStatus?: "active" | "suspended" | "deleted";
         lastSignedIn?: Date | null;
       },
 ) {
@@ -57,6 +60,9 @@ function buildUserResponse(
     name: user?.name ?? null,
     email: user?.email ?? null,
     loginMethod: user?.loginMethod ?? null,
+    imageUrl: (user as any)?.imageUrl ?? null,
+    role: (user as any)?.role ?? "user",
+    accountStatus: (user as any)?.accountStatus ?? "active",
     lastSignedIn: (user?.lastSignedIn ?? new Date()).toISOString(),
   };
 }

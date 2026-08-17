@@ -64,11 +64,26 @@ describe("recipe router security", () => {
       countryCode: "TR",
       category: "Çorba",
       title: "Test çorbası",
+      tip: "Mercimeği önceden yıkayın.",
       servings: 4,
       prepMinutes: 10,
       cookMinutes: 20,
       ingredients: [{ name: "Mercimek", amount: "1", unit: "su bardağı" }],
       steps: ["Pişir."],
     })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("rejects protected operations for suspended accounts", async () => {
+    const suspendedContext = {
+      ...context,
+      user: { accountStatus: "suspended", role: "user" },
+    } as never;
+    const caller = appRouter.createCaller(suspendedContext);
+    await expect(caller.sync.get()).rejects.toMatchObject({ code: "FORBIDDEN" });
+  });
+
+  it("rejects anonymous account deletion", async () => {
+    const caller = appRouter.createCaller(context);
+    await expect(caller.account.delete()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });

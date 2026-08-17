@@ -8,9 +8,11 @@ export const users = mysqlTable("users", {
   id: int("id").autoincrement().primaryKey(),
   openId: varchar("openId", { length: 64 }).notNull().unique(),
   name: text("name"),
+  imageUrl: text("imageUrl"),
   email: varchar("email", { length: 320 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: mysqlEnum("role", ["user", "admin"]).default("user").notNull(),
+  accountStatus: mysqlEnum("accountStatus", ["active", "suspended", "deleted"]).default("active").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
@@ -23,6 +25,7 @@ export const recipes = mysqlTable("recipes", {
   category: varchar("category", { length: 80 }).notNull(),
   title: varchar("title", { length: 180 }).notNull(),
   summary: text("summary"),
+  tip: text("tip"),
   imageUrl: text("imageUrl"),
   servings: int("servings").default(4).notNull(),
   prepMinutes: int("prepMinutes").default(0).notNull(),
@@ -120,3 +123,45 @@ export type SavedRecipe = typeof savedRecipes.$inferSelect;
 export type InsertSavedRecipe = typeof savedRecipes.$inferInsert;
 export type ShoppingItem = typeof shoppingItems.$inferSelect;
 export type InsertShoppingItem = typeof shoppingItems.$inferInsert;
+
+export const rateLimitBuckets = mysqlTable("rate_limit_buckets", {
+  id: int("id").autoincrement().primaryKey(),
+  bucketKey: varchar("bucketKey", { length: 220 }).notNull().unique(),
+  count: int("count").default(0).notNull(),
+  resetAt: timestamp("resetAt").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export const auditLogs = mysqlTable("audit_logs", {
+  id: int("id").autoincrement().primaryKey(),
+  actorId: int("actorId"),
+  action: varchar("action", { length: 100 }).notNull(),
+  entityType: varchar("entityType", { length: 60 }).notNull(),
+  entityId: varchar("entityId", { length: 120 }),
+  metadataJson: text("metadataJson"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  actorIdx: index("audit_logs_actor_idx").on(table.actorId, table.createdAt),
+  entityIdx: index("audit_logs_entity_idx").on(table.entityType, table.entityId, table.createdAt),
+}));
+
+export const contentReports = mysqlTable("content_reports", {
+  id: int("id").autoincrement().primaryKey(),
+  reporterId: int("reporterId").notNull(),
+  targetType: mysqlEnum("targetType", ["recipe", "comment", "attempt", "user"]).notNull(),
+  targetId: int("targetId").notNull(),
+  reason: varchar("reason", { length: 80 }).notNull(),
+  details: varchar("details", { length: 800 }),
+  status: mysqlEnum("status", ["pending", "resolved", "dismissed"]).default("pending").notNull(),
+  reviewedBy: int("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index("content_reports_status_idx").on(table.status, table.createdAt),
+  targetIdx: index("content_reports_target_idx").on(table.targetType, table.targetId),
+}));
+
+export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
+export type ContentReport = typeof contentReports.$inferSelect;
+export type InsertContentReport = typeof contentReports.$inferInsert;

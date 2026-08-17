@@ -282,6 +282,10 @@ class SDKServer {
       throw ForbiddenError("User not found");
     }
 
+    if (user.accountStatus !== "active") {
+      throw ForbiddenError("Account is not active");
+    }
+
     await db.upsertUser({
       openId: user.openId,
       lastSignedIn: signedInAt,
@@ -308,6 +312,7 @@ function buildCronUser(userInfo: GetUserInfoWithJwtResponse): AuthenticatedUser 
     email: null,
     loginMethod: null,
     role: "user",
+    accountStatus: "active",
     createdAt: now,
     updatedAt: now,
     lastSignedIn: now,

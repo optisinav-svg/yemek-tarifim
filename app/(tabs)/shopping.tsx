@@ -81,7 +81,7 @@ export default function ShoppingScreen() {
         <View style={styles.empty}>
           <IconSymbol name="shopping-cart" size={48} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Alışveriş listeniz boş</Text>
-          <Text style={[styles.emptyText, { color: colors.muted }]}>Tarif detaylarından "Alışveriş listesine ekle" diyerek malzemeleri buraya otomatik toplayabilirsiniz.</Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>Tarif detaylarından &quot;Alışveriş listesine ekle&quot; diyerek malzemeleri buraya otomatik toplayabilirsiniz.</Text>
         </View>
       ) : (
         <FlatList

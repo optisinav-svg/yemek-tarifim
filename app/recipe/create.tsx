@@ -20,6 +20,7 @@ export default function CreateRecipeScreen() {
   const router = useRouter();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
+  const [tip, setTip] = useState("");
   const [category, setCategory] = useState("Ana Yemek");
   const [countryCode, setCountryCode] = useState("TR");
   const [servings, setServings] = useState("4");
@@ -105,6 +106,7 @@ export default function CreateRecipeScreen() {
       const matchedCategory = categories.find((item) => item.name === extracted.category.trim());
       setTitle(extracted.title);
       setSummary(extracted.summary);
+      setTip(extracted.tip ?? "");
       setCategory(matchedCategory?.name ?? "Ana Yemek");
       setCountryCode(matchedCountry?.code ?? "TR");
       setServings(String(extracted.servings || 4));
@@ -145,6 +147,7 @@ export default function CreateRecipeScreen() {
         category,
         title: title.trim(),
         summary: summary.trim() || undefined,
+        tip: tip.trim() || undefined,
         servings: Number(servings) || 4,
         prepMinutes: Number(prepMinutes) || 15,
         cookMinutes: Number(cookMinutes) || 30,
@@ -165,6 +168,7 @@ export default function CreateRecipeScreen() {
           <View style={styles.topBar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="arrow-left" size={21} color={colors.foreground} /></Pressable><View style={styles.heading}><Text style={[styles.kicker, { color: colors.primary }]}>YENİ TARİF</Text><Text style={[styles.title, { color: colors.foreground }]}>Tarifini paylaş</Text></View><Text style={[styles.timeTotal, { color: colors.muted }]}>{total} dk</Text></View>
           <Field label="Tarif adı" value={title} onChangeText={setTitle} placeholder="Örn. Fırında sebzeli köfte" colors={colors} />
           <Field label="Kısa açıklama" value={summary} onChangeText={setSummary} placeholder="Bu tarifi özel yapan nedir?" colors={colors} multiline />
+          <Field label="Püf noktası" value={tip} onChangeText={setTip} placeholder="Tarifin inceliğini ve dikkat edilmesi gerekenleri yazın" colors={colors} multiline />
           <View style={[styles.ocrCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Pressable onPress={() => void handleOcrImport()} disabled={isBusy} style={({ pressed }) => [styles.ocrAction, { opacity: isBusy ? 0.55 : pressed ? 0.72 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraftan tarif aktar">
               <View style={[styles.ocrIcon, { backgroundColor: colors.primary }]}><IconSymbol name="camera" size={19} color="#FFFFFF" /></View>

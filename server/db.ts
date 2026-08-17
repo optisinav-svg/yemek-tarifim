@@ -1,6 +1,6 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, recipeAttempts, recipeComments, recipeMedia, recipes, savedRecipes, shoppingItems, users } from "../drizzle/schema";
+import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, auditLogs, contentReports, recipeAttempts, recipeComments, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -27,7 +27,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   }
   const values: InsertUser = { openId: user.openId };
   const updateSet: Record<string, unknown> = {};
-  const textFields = ["name", "email", "loginMethod"] as const;
+  const textFields = ["name", "imageUrl", "email", "loginMethod"] as const;
   type TextField = (typeof textFields)[number];
   const assignNullable = (field: TextField) => {
     const value = user[field];
@@ -50,6 +50,89 @@ export async function getUserByOpenId(openId: string) {
   if (!db) return undefined;
   const result = await db.select().from(users).where(eq(users.openId, openId)).limit(1);
   return result.length > 0 ? result[0] : undefined;
+}
+
+export async function consumeRateLimit(bucketKey: string, limit: number, windowMs: number) {
+  const db = await getDb();
+  const resetAt = new Date(Date.now() + windowMs);
+  if (!db) return { allowed: true, remaining: limit, resetAt };
+
+  const existing = await db.select().from(rateLimitBuckets).where(eq(rateLimitBuckets.bucketKey, bucketKey)).limit(1);
+  const bucket = existing[0];
+  if (!bucket || bucket.resetAt.getTime() <= Date.now()) {
+    if (bucket) {
+      await db.update(rateLimitBuckets).set({ count: 1, resetAt }).where(eq(rateLimitBuckets.id, bucket.id));
+    } else {
+      await db.insert(rateLimitBuckets).values({ bucketKey, count: 1, resetAt });
+    }
+    return { allowed: true, remaining: Math.max(0, limit - 1), resetAt };
+  }
+
+  if (bucket.count >= limit) return { allowed: false, remaining: 0, resetAt: bucket.resetAt };
+  await db.update(rateLimitBuckets).set({ count: bucket.count + 1 }).where(eq(rateLimitBuckets.id, bucket.id));
+  return { allowed: true, remaining: Math.max(0, limit - bucket.count - 1), resetAt: bucket.resetAt };
+}
+
+export async function createAuditLog(data: Omit<typeof auditLogs.$inferInsert, "id" | "createdAt">): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.insert(auditLogs).values(data);
+}
+
+export async function createContentReport(data: InsertContentReport) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(contentReports).values(data);
+  return (result as unknown as { insertId: number }).insertId;
+}
+
+export async function listPendingContentReports(): Promise<ContentReport[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select().from(contentReports).where(eq(contentReports.status, "pending")).orderBy(desc(contentReports.createdAt));
+}
+
+export async function resolveContentReport(id: number, reviewerId: number, status: "resolved" | "dismissed") {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(contentReports).set({ status, reviewedBy: reviewerId, reviewedAt: new Date() }).where(eq(contentReports.id, id));
+}
+
+export async function deleteAccount(userId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async (tx) => {
+    await tx.delete(savedRecipes).where(eq(savedRecipes.userId, userId));
+    await tx.delete(shoppingItems).where(eq(shoppingItems.userId, userId));
+    await tx.delete(recipeComments).where(eq(recipeComments.authorId, userId));
+    await tx.delete(recipeAttempts).where(eq(recipeAttempts.authorId, userId));
+    await tx.delete(recipeMedia).where(eq(recipeMedia.authorId, userId));
+    await tx.update(recipes).set({ status: "hidden" }).where(eq(recipes.authorId, userId));
+    await tx.update(users).set({
+      name: "Silinmiş kullanıcı",
+      email: null,
+      imageUrl: null,
+      role: "user",
+      accountStatus: "deleted",
+    }).where(eq(users.id, userId));
+  });
+}
+
+export async function updateUserProfile(openId: string, data: { name?: string; imageUrl?: string }) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const updateSet: Record<string, unknown> = {};
+  if (data.name !== undefined) updateSet.name = data.name;
+  if (data.imageUrl !== undefined) updateSet.imageUrl = data.imageUrl;
+  if (Object.keys(updateSet).length === 0) return;
+  await db.update(users).set(updateSet).where(eq(users.openId, openId));
+}
+
+export async function adminHideRecipe(recipeId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.update(recipes).set({ status: "hidden" }).where(eq(recipes.id, recipeId));
 }
 
 export async function listPublishedRecipes(filters?: { countryCode?: string; category?: string; search?: string }) {

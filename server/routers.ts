@@ -4,7 +4,7 @@ import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { createRecipe, createRecipeAttempt, createRecipeComment, createRecipeMedia, getRecipeById, getUserSyncState, hideRecipe, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeMedia, replaceUserSyncState, updateRecipe } from "./db";
+import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeMedia, deleteAccount, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
 
 const ingredientSchema = z.object({
@@ -26,6 +26,7 @@ const recipeInputSchema = z.object({
   category: z.string().trim().min(1).max(80),
   title: z.string().trim().min(3).max(180),
   summary: z.string().trim().max(1000).optional(),
+  tip: z.string().trim().max(2000).optional(),
   imageUrl: recipeAssetUrlSchema.optional(),
   media: z.array(mediaInputSchema).max(3).optional(),
   servings: z.number().int().min(1).max(100),
@@ -50,6 +51,7 @@ const ocrInputSchema = z.object({
 const ocrResultSchema = z.object({
   title: z.string().trim().min(1).max(180),
   summary: z.string().trim().max(1000),
+  tip: z.string().trim().max(2000).optional(),
   category: z.string().trim().min(1).max(80),
   countryCode: z.string().trim().min(2).max(8),
   servings: z.number().int().min(1).max(100),
@@ -68,6 +70,13 @@ const listInputSchema = z.object({
 const commentInputSchema = z.object({
   recipeId: z.number().int().positive(),
   body: z.string().trim().min(2, "Yorum en az 2 karakter olmalıdır.").max(1200),
+});
+
+const reportInputSchema = z.object({
+  targetType: z.enum(["recipe", "comment", "attempt", "user"]),
+  targetId: z.number().int().positive(),
+  reason: z.string().trim().min(2).max(80),
+  details: z.string().trim().max(800).optional(),
 });
 
 const attemptInputSchema = z.object({
@@ -101,6 +110,26 @@ function isOwnedRecipeAsset(url: string, userId: number) {
   return url.startsWith(`/manus-storage/recipes/${userId}/`) && !url.includes("..") && !url.includes("\\");
 }
 
+function getRequestIp(req: { headers: Record<string, string | string[] | undefined>; ip?: string }) {
+  const forwarded = req.headers["x-forwarded-for"];
+  if (typeof forwarded === "string") return forwarded.split(",")[0]?.trim() || "unknown";
+  if (Array.isArray(forwarded)) return forwarded[0] || "unknown";
+  return req.ip || "unknown";
+}
+
+async function enforceMutationRateLimit(ctx: { user: { id: number }; req: { headers: Record<string, string | string[] | undefined>; ip?: string } }, scope: string, limit: number, windowMs: number, message: string) {
+  const bucketKey = `user:${ctx.user.id}:${scope}:${getRequestIp(ctx.req)}`;
+  const result = await consumeRateLimit(bucketKey, limit, windowMs);
+  if (!result.allowed) {
+    await createAuditLog({ actorId: ctx.user.id, action: "rate_limit_denied", entityType: scope, entityId: String(ctx.user.id), metadataJson: JSON.stringify({ resetAt: result.resetAt.toISOString() }) });
+    throw new TRPCError({ code: "TOO_MANY_REQUESTS", message });
+  }
+}
+
+async function audit(ctx: { user: { id: number } }, action: string, entityType: string, entityId?: number | string, metadata?: Record<string, unknown>) {
+  await createAuditLog({ actorId: ctx.user.id, action, entityType, entityId: entityId === undefined ? null : String(entityId), metadataJson: metadata ? JSON.stringify(metadata) : null });
+}
+
 async function saveRecipeMedia(media: Array<z.infer<typeof mediaInputSchema>>, recipeId: number, authorId: number) {
   for (const item of media) {
     if (!isOwnedRecipeAsset(item.url, authorId)) {
@@ -117,6 +146,16 @@ export const appRouter = router({
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {
+      const cookieOptions = getSessionCookieOptions(ctx.req);
+      ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+  account: router({
+    delete: protectedProcedure.mutation(async ({ ctx }) => {
+      await enforceMutationRateLimit(ctx, "account-delete", 2, 24 * 60 * 60 * 1000, "Hesap silme işlemi için günlük sınır aşıldı.");
+      await deleteAccount(ctx.user.id);
+      await audit(ctx, "account_deleted", "user", ctx.user.id);
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
@@ -141,6 +180,7 @@ export const appRouter = router({
     }),
     media: router({
       upload: protectedProcedure.input(uploadInputSchema).mutation(async ({ ctx, input }) => {
+        await enforceMutationRateLimit(ctx, "media-upload", 30, 15 * 60 * 1000, "Kısa sürede çok fazla medya yüklediniz. Lütfen biraz sonra tekrar deneyin.");
         const bytes = Buffer.from(input.dataBase64, "base64");
         const maxBytes = input.mediaType === "image" ? 8 * 1024 * 1024 : 25 * 1024 * 1024;
         if (!bytes.byteLength || bytes.byteLength > maxBytes) {
@@ -154,6 +194,7 @@ export const appRouter = router({
         }
         const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || `media.${input.mediaType === "image" ? "jpg" : "mp4"}`;
         const uploaded = await storagePut(`recipes/${ctx.user.id}/${Date.now()}-${safeName}`, bytes, input.mimeType);
+        await audit(ctx, "media_uploaded", "recipe_media", undefined, { mediaType: input.mediaType, mimeType: input.mimeType });
         return { ...uploaded, mediaType: input.mediaType, mimeType: input.mimeType };
       }),
       byRecipe: publicProcedure.input(z.object({ recipeId: z.number().int().positive() })).query(async ({ input }) => {
@@ -167,10 +208,12 @@ export const appRouter = router({
         return listRecipeComments(input.recipeId);
       }),
       addComment: protectedProcedure.input(commentInputSchema).mutation(async ({ ctx, input }) => {
+        await enforceMutationRateLimit(ctx, "comment-create", 20, 15 * 60 * 1000, "Kısa sürede çok fazla yorum gönderdiniz.");
         if (!await getRecipeById(input.recipeId)) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Tarif bulunamadı." });
         }
         const id = await createRecipeComment({ recipeId: input.recipeId, authorId: ctx.user.id, body: input.body, status: "visible" });
+        await audit(ctx, "comment_created", "recipe_comment", Number(id), { recipeId: input.recipeId });
         return { id: Number(id) };
       }),
       attempts: publicProcedure.input(z.object({ recipeId: z.number().int().positive() })).query(async ({ input }) => {
@@ -178,6 +221,7 @@ export const appRouter = router({
         return listRecipeAttempts(input.recipeId);
       }),
       addAttempt: protectedProcedure.input(attemptInputSchema).mutation(async ({ ctx, input }) => {
+        await enforceMutationRateLimit(ctx, "attempt-create", 10, 60 * 60 * 1000, "Saatlik fotoğraflı deneme sınırını aştınız.");
         if (!await getRecipeById(input.recipeId)) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Tarif bulunamadı." });
         }
@@ -188,10 +232,12 @@ export const appRouter = router({
         const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || "attempt.jpg";
         const uploaded = await storagePut(`recipes/${ctx.user.id}/attempts/${Date.now()}-${safeName}`, bytes, input.mimeType);
         const id = await createRecipeAttempt({ recipeId: input.recipeId, authorId: ctx.user.id, caption: input.caption ?? null, imageUrl: uploaded.url, imageMimeType: input.mimeType, status: "visible" });
+        await audit(ctx, "recipe_attempt_created", "recipe_attempt", Number(id), { recipeId: input.recipeId });
         return { id: Number(id), url: uploaded.url };
       }),
     }),
-    ocr: protectedProcedure.input(ocrInputSchema).mutation(async ({ input }) => {
+    ocr: protectedProcedure.input(ocrInputSchema).mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "ocr", 10, 60 * 60 * 1000, "Saatlik görsel tarif aktarma sınırını aştınız.");
       const response = await invokeLLM({
         model: "gemini-3-flash-preview",
         max_tokens: 3000,
@@ -205,7 +251,7 @@ export const appRouter = router({
             content: [
               {
                 type: "text",
-                text: "Bu görseldeki yemek tarifini düzenlenebilir alanlara aktar. Başlık, kısa açıklama, kategori, ülke kodu (Türkiye için TR; emin değilsen TR), porsiyon, hazırlama ve pişirme dakikaları, malzemeler (miktar/birim/ad) ve yapılış adımlarını çıkar. JSON anahtarları tam olarak title, summary, category, countryCode, servings, prepMinutes, cookMinutes, ingredients, steps olsun. ingredients her biri name, amount ve unit alanlarına sahip dizi olsun.",
+                text: "Bu görseldeki yemek tarifini düzenlenebilir alanlara aktar. Başlık, kısa açıklama, kategori, ülke kodu (Türkiye için TR; emin değilsen TR), porsiyon, hazırlama ve pişirme dakikaları, malzemeler (miktar/birim/ad) ve yapılış adımlarını çıkar. JSON anahtarları tam olarak title, summary, tip, category, countryCode, servings, prepMinutes, cookMinutes, ingredients, steps olsun. tip tarifteki püf noktası okunabiliyorsa metin, okunamıyorsa boş bırakılabilir. ingredients her biri name, amount ve unit alanlarına sahip dizi olsun.",
               },
               { type: "image_url", image_url: { url: `data:${input.mimeType};base64,${input.dataBase64}`, detail: "auto" } },
             ],
@@ -217,18 +263,21 @@ export const appRouter = router({
       const jsonText = typeof content === "string" ? content : content.filter((part) => part.type === "text").map((part) => part.text).join("\\n");
       try {
         const parsed = ocrResultSchema.parse(JSON.parse(jsonText));
+        await audit(ctx, "recipe_ocr_completed", "recipe_import");
         return parsed;
       } catch {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Görselde düzenlenebilir bir tarif metni bulunamadı. Lütfen daha net bir fotoğraf deneyin." });
       }
     }),
     create: protectedProcedure.input(recipeInputSchema).mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "recipe-create-daily", 20, 24 * 60 * 60 * 1000, "Günlük tarif ekleme sınırını aştınız.");
       const id = await createRecipe({
         authorId: ctx.user.id,
         countryCode: input.countryCode,
         category: input.category,
         title: input.title,
         summary: input.summary ?? null,
+        tip: input.tip ?? null,
         imageUrl: input.imageUrl ?? input.media?.[0]?.url ?? null,
         servings: input.servings,
         prepMinutes: input.prepMinutes,
@@ -239,9 +288,11 @@ export const appRouter = router({
       });
       const recipeId = Number(id);
       await saveRecipeMedia(input.media ?? [], recipeId, ctx.user.id);
+      await audit(ctx, "recipe_created", "recipe", recipeId, { countryCode: input.countryCode, category: input.category });
       return { id: recipeId };
     }),
     update: protectedProcedure.input(recipeInputSchema.extend({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "recipe-update", 30, 60 * 60 * 1000, "Saatlik tarif düzenleme sınırını aştınız.");
       const { id, ingredients, steps, media, ...rest } = input;
       await updateRecipe(id, ctx.user.id, {
         ...rest,
@@ -251,13 +302,51 @@ export const appRouter = router({
         stepsJson: JSON.stringify(steps),
       });
       await saveRecipeMedia(media ?? [], id, ctx.user.id);
+      await audit(ctx, "recipe_updated", "recipe", id);
       return { success: true } as const;
     }),
-    hide: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ input }) => {
+    hide: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       await hideRecipe(input.id);
+      await audit(ctx, "recipe_hidden", "recipe", input.id);
       return { success: true } as const;
     }),
   }),
+  profile: router({
+    uploadAvatar: protectedProcedure.input(uploadInputSchema.extend({ mediaType: z.literal("image"), mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]) })).mutation(async ({ ctx, input }) => {
+      const bytes = Buffer.from(input.dataBase64, "base64");
+      if (!bytes.byteLength || bytes.byteLength > 8 * 1024 * 1024) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Profil fotoğrafı 8 MB'dan küçük olmalıdır." });
+      }
+      const safeName = input.fileName.replace(/[^a-zA-Z0-9._-]/g, "_").slice(-80) || "avatar.jpg";
+      const uploaded = await storagePut(`avatars/${ctx.user.id}/${Date.now()}-${safeName}`, bytes, input.mimeType);
+      return { url: uploaded.url };
+    }),
+  }),
+  moderation: router({
+    report: protectedProcedure.input(reportInputSchema).mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "report-create", 10, 24 * 60 * 60 * 1000, "Günlük rapor gönderme sınırını aştınız.");
+      if (input.targetType === "recipe" && !await getRecipeById(input.targetId)) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Raporlanacak tarif bulunamadı." });
+      }
+      const id = await createContentReport({ reporterId: ctx.user.id, targetType: input.targetType, targetId: input.targetId, reason: input.reason, details: input.details ?? null, status: "pending" });
+      await audit(ctx, "content_report_created", input.targetType, input.targetId, { reason: input.reason });
+      return { id: Number(id) };
+    }),
+    pending: adminProcedure.query(async () => listPendingContentReports()),
+    resolve: adminProcedure.input(z.object({ id: z.number().int().positive(), status: z.enum(["resolved", "dismissed"]) })).mutation(async ({ ctx, input }) => {
+      await resolveContentReport(input.id, ctx.user.id, input.status);
+      await audit(ctx, "content_report_resolved", "content_report", input.id, { status: input.status });
+      return { success: true } as const;
+    }),
+  }),
+  updateProfile: protectedProcedure
+    .input(z.object({ name: z.string().trim().min(1).max(80).optional(), imageUrl: z.string().trim().max(1000).optional() }))
+    .mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "profile-update", 30, 60 * 60 * 1000, "Profil güncelleme sınırını aştınız.");
+      await updateUserProfile(ctx.user.openId, input);
+      await audit(ctx, "profile_updated", "user", ctx.user.id);
+      return { success: true };
+    }),
 });
 
 export type AppRouter = typeof appRouter;

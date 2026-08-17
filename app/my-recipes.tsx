@@ -53,7 +53,7 @@ export default function MyRecipesScreen() {
         <View style={styles.empty}>
           <IconSymbol name="restaurant" size={36} color={colors.muted} />
           <Text style={[styles.emptyTitle, { color: colors.foreground }]}>Henüz bir tarif eklemediniz</Text>
-          <Text style={[styles.emptyText, { color: colors.muted }]}>Ana sayfadaki "Tarif ekle" düğmesini kullanarak ilk tarifinizi hemen yayınlayabilirsiniz.</Text>
+          <Text style={[styles.emptyText, { color: colors.muted }]}>Ana sayfadaki &quot;Tarif ekle&quot; düğmesini kullanarak ilk tarifinizi hemen yayınlayabilirsiniz.</Text>
           <Pressable onPress={() => router.push("/recipe/create")} style={[styles.actionButton, { backgroundColor: colors.primary }]}>
             <Text style={styles.actionButtonText}>Tarif Oluştur</Text>
           </Pressable>

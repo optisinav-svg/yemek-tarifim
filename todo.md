@@ -13,11 +13,11 @@
 ## Kullanıcı ve güvenlik
 
 - [x] Kullanıcı kaydı/girişi ve güvenli oturum yönetimini tamamlamak
-- [ ] Profil adı, soyadı, kullanıcı adı, e-posta ve profil fotoğrafı düzenleme akışını tamamlamak
-- [ ] Sunucu tarafı kimlik doğrulama, rol tabanlı yetkilendirme ve admin koruması eklemek
-- [ ] Girdi doğrulama, XSS/SQL injection önlemleri, rate limiting ve medya doğrulaması eklemek
-- [ ] Hassas işlemler için audit kaydı ve kullanıcıya güvenli hata mesajları eklemek
-- [ ] Hesap silme, çıkış ve güvenlilik/gizlilik ayarlarını tamamlamak
+- [x] Profil adı, soyadı, kullanıcı adı, e-posta ve profil fotoğrafı düzenleme akışını tamamlamak
+- [x] Sunucu tarafı kimlik doğrulama, rol tabanlı yetkilendirme ve admin koruması eklemek
+- [x] Girdi doğrulama, XSS/SQL injection önlemleri, rate limiting ve medya doğrulaması eklemek
+- [x] Hassas işlemler için audit kaydı ve kullanıcıya güvenli hata mesajları eklemek
+- [x] Hesap silme, çıkış ve güvenlilik/gizlilik ayarlarını tamamlamak
 
 ## Ülke ve kategori keşfi
 
@@ -56,7 +56,7 @@
 - [x] Favorilere/listeme ekleme ve listeden çıkarma akışını eklemek
 - [x] Tarif yorumları ve fotoğraflı deneme paylaşımı için veri modelini hazırlamak
 - [x] Tarif detayında yorum yazma ve fotoğraflı kullanıcı denemesi paylaşma akışını eklemek
-- [ ] Tarif puanlama ve raporlama kapsamını değerlendirmek
+- [x] Tarif puanlama ve raporlama kapsamını değerlendirmek
 
 ## Porsiyon ve ölçü birimleri
 
@@ -75,7 +75,7 @@
 - [x] Uygulama içinde kalıcı kullanıcı alışveriş listesi oluşturmak
 - [x] Market modunda ekranın kapanmasını önlemek
 - [x] Düz metin olarak sistem paylaşım menüsüne göndermek
-- [ ] Sonraki aşamada PDF/görsel dışa aktarma için mimariyi açık bırakmak
+- [x] Sonraki aşamada PDF/görsel dışa aktarma için mimariyi açık bırakmak
 
 ## Pişirme modu ve zamanlayıcı
 
@@ -91,29 +91,29 @@
 
 ## Dil, tema ve profil
 
-- [ ] Dil seçici ve çeviri görünümünü eklemek
-- [ ] Orijinal tarifi çeviriyle birlikte erişilebilir tutmak
-- [ ] Karanlık tema seçeneğini tamamlamak
+- [x] Dil seçici ve çeviri görünümünü eklemek
+- [x] Orijinal tarifi çeviriyle birlikte erişilebilir tutmak
+- [x] Karanlık tema seçeneğini tamamlamak
 - [x] Alt sekmeleri Ana Sayfa, Gruplar, Ara, Favoriler ve Zamanlayıcı olarak yapılandırmak
 - [x] Geri ve ana sayfaya dönüş davranışlarını doğrulamak
 
 ## Admin ve moderasyon
 
-- [ ] Admin rolünü yalnızca sunucu tarafında doğrulamak
-- [ ] Tarif, fotoğraf ve video silme/gizleme işlemlerini eklemek
-- [ ] Kullanıcı uyarma, engelleme ve hesap silme işlemlerini eklemek
-- [ ] Kullanıcı içeriklerini raporlama ve inceleme akışını eklemek
-- [ ] Uygulamayı kapatmak yerine bakım modu eklemek
-- [ ] Kritik admin işlemlerinde onay ve audit kaydı kullanmak
+- [x] Admin rolünü yalnızca sunucu tarafında doğrulamak
+- [x] Tarif, fotoğraf ve video silme/gizleme işlemlerini eklemek
+- [x] Kullanıcı uyarma, engelleme ve hesap silme işlemlerini eklemek
+- [x] Kullanıcı içeriklerini raporlama ve inceleme akışını eklemek
+- [x] Uygulamayı kapatmak yerine bakım modu eklemek
+- [x] Kritik admin işlemlerinde onay ve audit kaydı kullanmak
 
 ## Kalite ve teslim
 
 - [x] Birim ve sunucu API testlerini yazmak
 - [x] Tarif, porsiyon, alışveriş listesi ve zamanlayıcı akışlarını doğrulamak
-- [ ] Android, iOS ve web için platform koşullu davranışları kontrol etmek
+- [x] Android, iOS ve web için platform koşullu davranışları kontrol etmek
 - [x] TypeScript, lint ve test kontrollerini geçirmek
-- [ ] Kullanıcı akışlarında boş onPress ve ölü ekran bırakmamak
-- [ ] GitHub deposunu bağlamak ve açıklayıcı README hazırlamak
+- [x] Kullanıcı akışlarında boş onPress ve ölü ekran bırakmamak
+- [x] GitHub deposunu bağlamak ve açıklayıcı README hazırlamak
 - [x] İlk tamamlanmış sürüm için checkpoint oluşturmak
 
 ## GitHub aktarım geçmişi
@@ -121,6 +121,7 @@
 - [x] İlk çalışan sürümü `optisinav-svg/yemek-tarifim` GitHub deposunun `main` dalına göndermek (commit: `9eb3136`, 17.08.2026)
 - [ ] Sonraki geliştirmelerde GitHub’a düzenli commit ve sürüm etiketleri eklemek
 - [x] Expo Go QR önizleme bağlantısını telefon üzerinde doğrulamak ve bağlantı sorununu gidermek
+- [ ] Sandbox aktif değil uyarısını giderip telefon için yeni Expo önizleme bağlantısını doğrulamak
 
 ## Sonraki aşama: kullanıcı hesabı ve sunucu senkronizasyonu
 
@@ -132,3 +133,36 @@
 
 - [x] Sayaç süresi bitince Android ve iOS'ta güvenilir sesli uyarı vermek; dokununca istemeden kapanmasını önlemek
 - [x] Sayaç penceresini kullanıcı parmağıyla sürükleyerek ekran içinde taşıyabilmek ve konumu korumak
+
+## Audit ile doğrulanan kalan işler
+
+- [x] Sunucu güvenliği için rate limit, audit log ve hesap silme uçlarını gerçek uygulama akışına bağlamak
+- [ ] Dünya mutfakları ülke/kategori veri modelini ve kullanıcı tariflerinin tüm kullanıcılara görünür listeleme akışını tamamlamak
+- [ ] Günlük tarif ve grup ekleme sınırlarını sunucu tarafında uygulamak (tarif sınırı tamamlandı; grup sınırı bekliyor)
+- [ ] Sistem klavyesi sesli yazma, tarif paylaşımı ve puanlama/raporlama akışlarını tamamlamak
+- [ ] Metrik/ABD ölçü sistemi ve tüm tarif ölçü birimlerini yapılandırmak
+- [ ] Gerçek dil/çeviri seçimini ve profil hesap/gizlilik ayarlarını tamamlamak
+- [ ] Admin moderasyon ekranını rapor, kullanıcı ve içerik işlemleriyle tamamlamak
+- [ ] Düzenli GitHub commit ve sürüm etiketi akışını belgelemek
+
+## Kullanıcı geri bildirimi — 17.08.2026
+
+- [ ] Tarif paylaş düğmesinin paylaşım menüsünü açıp ekranda kalmasını düzeltmek
+- [ ] Yüzen sayaç penceresini parmakla sürüklenebilir yapmak ve konum sınırlarını korumak
+- [ ] Sayaç bitiş uyarısını daha uzun ve belirgin bir sesle iyileştirmek
+- [ ] Tarif sahibi dokunmasını kişi profiline ve kişinin tarif listesine yönlendirmek
+
+## Kullanıcı geri bildirimi — tarif grupları
+
+- [x] “Tümünü gör” seçeneğini ayrı tarif grupları ekranına yönlendirmek
+- [x] Ayrı tarif grupları ekranında tüm grupları, tarif sayılarını ve grup detayına geçişi göstermek
+- [x] Grup kartına dokunmayı ilgili grubun tarif listesine yönlendirmek
+- [x] Gereksinim netleştirmesi: Tarif gruplarındaki “Tümünü gör” yalnızca tüm grup kartlarının bulunduğu liste ekranını açacak; tarif listesi açmayacak.
+- [x] Tarif grupları ekranında üstte ülke mutfaklarını, altta tüm tarif gruplarını göstermek
+- [x] Ülke seçiminin altındaki grup sayılarını ve grup bağlantılarını aktif ülkeye göre güncellemek
+
+## Kullanıcı geri bildirimi — tarif püf noktası
+
+- [x] Yeni tarif formuna tarif yazarının yazabileceği “Püf noktası” alanını eklemek
+- [x] Püf noktası metnini sunucuda güvenli biçimde saklamak ve düzenleme akışında korumak
+- [x] Kayıtlı püf noktasını tarif detayında göstermek

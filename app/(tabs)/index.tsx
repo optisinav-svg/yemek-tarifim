@@ -62,7 +62,7 @@ function CountrySelector() {
   );
 }
 
-function CategoryStrip({ onCategory }: { onCategory: (category: string) => void }) {
+function CategoryStrip({ onCategory, onSeeAll }: { onCategory: (category: string) => void; onSeeAll: () => void }) {
   const colors = useColors();
   return (
     <View style={styles.categorySection}>
@@ -71,7 +71,7 @@ function CategoryStrip({ onCategory }: { onCategory: (category: string) => void 
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tarif grupları</Text>
           <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>Canın hangisini çekiyor?</Text>
         </View>
-        <Pressable onPress={() => onCategory("Tümü")}><Text style={[styles.seeAll, { color: colors.primary }]}>Tümünü gör</Text></Pressable>
+        <Pressable onPress={onSeeAll} accessibilityRole="button" accessibilityLabel="Tüm tarif gruplarını gör"><Text style={[styles.seeAll, { color: colors.primary }]}>Tümünü gör</Text></Pressable>
       </View>
       <FlatList
         horizontal
@@ -108,7 +108,7 @@ export default function HomeScreen() {
         <View style={[styles.searchShortcut, { backgroundColor: colors.background }]}><Text style={[styles.searchShortcutText, { color: colors.muted }]}>⌘ K</Text></View>
       </Pressable>
       <CountrySelector />
-      <CategoryStrip onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} />
+      <CategoryStrip onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} onSeeAll={() => router.push("/groups")} />
       <View style={styles.latestHeading}>
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Yeni eklenenler</Text>
