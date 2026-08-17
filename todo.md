@@ -26,7 +26,7 @@
 - [x] “Tümü” seçeneğinde seçili kategorinin tüm ülkelerden tariflerini göstermek
 - [x] Sistem kategorilerini ve kullanıcı tarafından eklenen grupları oluşturmak
 - [x] Kategori altında tarif sayısını göstermek
-- [ ] Günlük grup ekleme sınırını sunucu tarafında uygulamak
+- [x] Günlük grup ekleme sınırını sunucu tarafında uygulamak
 
 ## Tarifler
 
@@ -138,7 +138,7 @@
 
 - [x] Sunucu güvenliği için rate limit, audit log ve hesap silme uçlarını gerçek uygulama akışına bağlamak
 - [ ] Dünya mutfakları ülke/kategori veri modelini ve kullanıcı tariflerinin tüm kullanıcılara görünür listeleme akışını tamamlamak
-- [ ] Günlük tarif ve grup ekleme sınırlarını sunucu tarafında uygulamak (tarif sınırı tamamlandı; grup sınırı bekliyor)
+- [x] Günlük tarif ve grup ekleme sınırlarını sunucu tarafında uygulamak
 - [ ] Sistem klavyesi sesli yazma, tarif paylaşımı ve puanlama/raporlama akışlarını tamamlamak
 - [ ] Metrik/ABD ölçü sistemi ve tüm tarif ölçü birimlerini yapılandırmak
 - [ ] Gerçek dil/çeviri seçimini ve profil hesap/gizlilik ayarlarını tamamlamak
@@ -166,3 +166,39 @@
 - [x] Yeni tarif formuna tarif yazarının yazabileceği “Püf noktası” alanını eklemek
 - [x] Püf noktası metnini sunucuda güvenli biçimde saklamak ve düzenleme akışında korumak
 - [x] Kayıtlı püf noktasını tarif detayında göstermek
+
+## Kullanıcı geri bildirimi — kayıt ve profil bilgileri
+
+- [ ] Kayıt akışında e-posta, ad, soyad, kullanıcı adı, parola ve profil fotoğrafı alanlarını desteklemek
+- [ ] Kullanıcı adı benzersizliği ve parola güvenliği doğrulamalarını sunucu tarafında uygulamak
+- [ ] Ana menüdeki kullanıcı düğmesini profil bilgileri düzenleme ekranına bağlamak
+- [ ] Profil ekranından ad, soyad, kullanıcı adı, e-posta, parola ve profil fotoğrafı değişikliklerini güvenli biçimde kaydetmek
+
+## Kullanıcı geri bildirimi — serbest sayaç süresi
+
+- [ ] Sabit 5/10/20 dakika seçenekleri yerine saat ve dakika seçicisi eklemek
+- [ ] Sayaç seçicisini 00:00 başlangıç değerinde açmak ve geçersiz sıfır süreyi engellemek
+- [ ] Seçilen süreyi mevcut sürüklenebilir sayaç ve bitiş uyarısı akışına bağlamak
+
+## Kullanıcı geri bildirimi — grup ekleme
+
+- [x] Ülke ve tarif grupları ekranına “Grup ekle” butonu eklemek
+- [x] Yeni grup adını seçili ülkeye bağlayıp güvenli biçimde kaydetmek
+- [x] Yeni grubu grup listesinde ve ilgili tarif filtrelerinde göstermek
+- [x] Günlük grup oluşturma sınırını sunucu tarafında uygulamak
+
+## Kullanıcı geri bildirimi — e-posta doğrulamalı hesap akışı
+
+- [ ] Kayıtta e-posta, ad, soyad ve parola alıp doğrulama e-postası göndermek
+- [ ] E-posta doğrulanmadan hesabı etkinleştirmemek
+- [ ] Giriş ekranında e-posta, parola ve güvenli “Beni hatırla” seçeneği sunmak
+- [ ] “Şifremi unuttum” akışında tek kullanımlık, süreli parola sıfırlama e-postası göndermek
+- [ ] Parola sıfırlama ekranını Android, iOS ve Web ile uyumlu tamamlamak
+
+## Teslimat — GitHub aktarımı
+
+- [ ] E-posta doğrulamalı kayıt ve parola sıfırlama özellikleri tamamlandıktan sonra son checkpoint’i GitHub aktarımına hazırlamak
+- [ ] GitHub deposuna aktarım durumunu doğrulamak ve kullanıcıya net aktarım özeti vermek
+- [ ] Konuşulanların dışından, .com ihtimali yüksek ve Google Play çakışması olmayan 5 yeni isim adayını üretmek ve araştırmasını yapmak
+- [x] Daha önce konuşulan tüm adları (Sofra Rotaları, Lezzet Haritası, Tarif Pusulası, Pişir Noktası, Tabak Defteri vb.) hariç tutarak 5 yeni isim adayını üretmek: Mutfak Atölyesi, Tencere Rotası, Pişirme Rehberi, Lezzet Laboratuvarı, Sofra Notları.
+- [x] mutfaksanatları.com adresini ve “mutfak” kelimesini içeren yeni özgün alan adı adaylarını araştırmak ve doğrulamak

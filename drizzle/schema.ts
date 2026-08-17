@@ -44,6 +44,23 @@ export const recipes = mysqlTable("recipes", {
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
 
+export const recipeGroups = mysqlTable("recipe_groups", {
+  id: int("id").autoincrement().primaryKey(),
+  countryCode: varchar("countryCode", { length: 8 }).notNull(),
+  name: varchar("name", { length: 80 }).notNull(),
+  authorId: int("authorId").notNull(),
+  status: mysqlEnum("status", ["active", "hidden"]).default("active").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  countryNameIdx: uniqueIndex("recipe_groups_country_name_idx").on(table.countryCode, table.name),
+  countryCreatedIdx: index("recipe_groups_country_created_idx").on(table.countryCode, table.createdAt),
+  authorIdx: index("recipe_groups_author_idx").on(table.authorId),
+}));
+
+export type RecipeGroup = typeof recipeGroups.$inferSelect;
+export type InsertRecipeGroup = typeof recipeGroups.$inferInsert;
+
 export const recipeMedia = mysqlTable("recipe_media", {
   id: int("id").autoincrement().primaryKey(),
   recipeId: int("recipeId").notNull(),

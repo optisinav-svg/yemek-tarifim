@@ -29,6 +29,16 @@ export default function CreateRecipeScreen() {
   const [ingredients, setIngredients] = useState(defaultIngredients);
   const [steps, setSteps] = useState(defaultSteps);
   const [media, setMedia] = useState<PendingMedia[]>([]);
+  const customGroupsQuery = trpc.groups.list.useQuery({ countryCode }, { staleTime: 30_000 });
+  const availableCategories = useMemo(() => {
+    const builtInNames = new Set(categories.map((item) => item.name));
+    return [
+      ...categories,
+      ...(customGroupsQuery.data ?? [])
+        .filter((group) => !builtInNames.has(group.name))
+        .map((group) => ({ name: group.name, icon: "category", count: 0, color: "#8B6BA8" })),
+    ];
+  }, [customGroupsQuery.data]);
   const utils = trpc.useUtils();
   const uploadMediaMutation = trpc.recipes.media.upload.useMutation();
   const ocrMutation = trpc.recipes.ocr.useMutation();
@@ -103,7 +113,7 @@ export default function CreateRecipeScreen() {
       const extracted = await ocrMutation.mutateAsync({ dataBase64, mimeType });
       const normalizedCountry = extracted.countryCode.trim().toUpperCase();
       const matchedCountry = recipeCountries.find((item) => item.code === normalizedCountry);
-      const matchedCategory = categories.find((item) => item.name === extracted.category.trim());
+      const matchedCategory = availableCategories.find((item) => item.name === extracted.category.trim());
       setTitle(extracted.title);
       setSummary(extracted.summary);
       setTip(extracted.tip ?? "");
@@ -200,7 +210,7 @@ export default function CreateRecipeScreen() {
           </View>
           <Text style={[styles.countryHint, { color: colors.muted }]}>Yeni ülke mutfakları eklendikçe bu seçim genişletilecektir.</Text>
           <Text style={[styles.label, { color: colors.foreground }]}>Tarif grubu</Text>
-          <View style={styles.categoryWrap}>{categories.map((item) => { const active = category === item.name; return <Pressable key={item.name} onPress={() => setCategory(item.name)} style={[styles.category, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]}><Text style={[styles.categoryText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.name}</Text></Pressable>; })}</View>
+          <View style={styles.categoryWrap}>{availableCategories.map((item) => { const active = category === item.name; return <Pressable key={item.name} onPress={() => setCategory(item.name)} style={[styles.category, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]}><Text style={[styles.categoryText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.name}</Text></Pressable>; })}</View>
           <View style={styles.twoFields}><Field label="Porsiyon" value={servings} onChangeText={setServings} placeholder="4" colors={colors} keyboardType="number-pad" compact /><Field label="Hazırlama (dk)" value={prepMinutes} onChangeText={setPrepMinutes} placeholder="20" colors={colors} keyboardType="number-pad" compact /><Field label="Pişirme (dk)" value={cookMinutes} onChangeText={setCookMinutes} placeholder="30" colors={colors} keyboardType="number-pad" compact /></View>
           <SectionLabel title="Malzemeler" hint="Miktar ve birimiyle yaz" colors={colors} />
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{ingredients.map((ingredient, index) => <View key={index} style={styles.listRow}><Text style={[styles.rowNumber, { color: colors.primary }]}>{index + 1}</Text><TextInput value={ingredient} onChangeText={(value) => updateIngredient(index, value)} placeholder="Örn. 2 su bardağı un" placeholderTextColor={colors.muted} style={[styles.listInput, { color: colors.foreground }]} returnKeyType="next" />{ingredients.length > 1 && <Pressable onPress={() => setIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addIngredient} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Malzeme ekle</Text></Pressable></View>

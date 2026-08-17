@@ -4,7 +4,7 @@ import { z } from "zod";
 import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeMedia, deleteAccount, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
+import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
 
 const ingredientSchema = z.object({
@@ -87,6 +87,17 @@ const attemptInputSchema = z.object({
   caption: z.string().trim().max(600).optional(),
 });
 
+const groupListInputSchema = z.object({
+  countryCode: z.string().trim().max(8).optional(),
+}).optional();
+
+const groupCreateInputSchema = z.object({
+  countryCode: z.string().trim().min(2).max(8).refine((value) => value !== "ALL", "Yeni grup için belirli bir ülke seçin."),
+  name: z.string().trim().min(2, "Grup adı en az 2 karakter olmalıdır.").max(80, "Grup adı 80 karakterden uzun olamaz."),
+});
+
+const BUILT_IN_CATEGORY_NAMES = new Set(["Çorbalar", "Ana Yemek", "Salatalar", "Tatlılar", "Hamur İşi", "İçecekler"]);
+
 const syncStateSchema = z.object({
   savedRecipeIds: z.array(z.string().trim().min(1).max(120)).max(500),
   shoppingItems: z.array(z.object({
@@ -159,6 +170,22 @@ export const appRouter = router({
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
       return { success: true } as const;
+    }),
+  }),
+  groups: router({
+    list: publicProcedure.input(groupListInputSchema).query(({ input }) => listRecipeGroups(input?.countryCode)),
+    create: protectedProcedure.input(groupCreateInputSchema).mutation(async ({ ctx, input }) => {
+      await enforceMutationRateLimit(ctx, "group-create-daily", 5, 24 * 60 * 60 * 1000, "Günlük grup ekleme sınırına ulaştınız.");
+      const normalizedName = input.name.replace(/\s+/g, " ").trim();
+      if (BUILT_IN_CATEGORY_NAMES.has(normalizedName)) {
+        throw new TRPCError({ code: "CONFLICT", message: "Bu ad zaten sistem gruplarında bulunuyor." });
+      }
+      if (await findRecipeGroup(input.countryCode, normalizedName)) {
+        throw new TRPCError({ code: "CONFLICT", message: "Bu ülkede aynı isimde bir grup zaten var." });
+      }
+      const id = await createRecipeGroup({ countryCode: input.countryCode, name: normalizedName, authorId: ctx.user.id, status: "active" });
+      await audit(ctx, "recipe_group_created", "recipe_group", Number(id), { countryCode: input.countryCode, name: normalizedName });
+      return { id: Number(id), countryCode: input.countryCode, name: normalizedName };
     }),
   }),
   sync: router({

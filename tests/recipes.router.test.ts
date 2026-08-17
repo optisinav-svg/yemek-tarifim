@@ -87,3 +87,26 @@ describe("recipe router security", () => {
     await expect(caller.account.delete()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
   });
 });
+
+
+describe("recipe groups router security", () => {
+  it("allows public custom-group discovery to return a list", async () => {
+    const caller = appRouter.createCaller(context);
+    const result = await caller.groups.list({ countryCode: "TR" });
+    expect(Array.isArray(result)).toBe(true);
+  });
+
+  it("rejects anonymous group creation", async () => {
+    const caller = appRouter.createCaller(context);
+    await expect(caller.groups.create({ countryCode: "TR", name: "Kahvaltılıklar" })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("rejects group creation for the all-countries filter", async () => {
+    const authenticatedContext = {
+      ...context,
+      user: { id: 42, openId: "test-user", role: "user", accountStatus: "active" },
+    } as never;
+    const caller = appRouter.createCaller(authenticatedContext);
+    await expect(caller.groups.create({ countryCode: "ALL", name: "Kahvaltılıklar" })).rejects.toMatchObject({ code: "BAD_REQUEST" });
+  });
+});

@@ -1,6 +1,6 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, auditLogs, contentReports, recipeAttempts, recipeComments, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
+import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -77,6 +77,28 @@ export async function createAuditLog(data: Omit<typeof auditLogs.$inferInsert, "
   const db = await getDb();
   if (!db) return;
   await db.insert(auditLogs).values(data);
+}
+
+export async function listRecipeGroups(countryCode?: string): Promise<RecipeGroup[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const conditions = [eq(recipeGroups.status, "active")] as Parameters<typeof and>[0][];
+  if (countryCode && countryCode !== "ALL") conditions.push(eq(recipeGroups.countryCode, countryCode));
+  return db.select().from(recipeGroups).where(and(...conditions)).orderBy(desc(recipeGroups.createdAt));
+}
+
+export async function findRecipeGroup(countryCode: string, name: string) {
+  const db = await getDb();
+  if (!db) return undefined;
+  const result = await db.select().from(recipeGroups).where(and(eq(recipeGroups.countryCode, countryCode), eq(recipeGroups.name, name))).limit(1);
+  return result[0];
+}
+
+export async function createRecipeGroup(data: InsertRecipeGroup) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.insert(recipeGroups).values(data);
+  return (result as unknown as { insertId: number }).insertId;
 }
 
 export async function createContentReport(data: InsertContentReport) {
