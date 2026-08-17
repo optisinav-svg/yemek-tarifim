@@ -18,6 +18,7 @@ export default function TabLayout() {
       <Tabs.Screen name="saved" options={{ title: "Listem", tabBarIcon: ({ color }) => <IconSymbol size={22} name="bookmark" color={color} /> }} />
       <Tabs.Screen name="shopping" options={{ title: "Market", tabBarIcon: ({ color }) => <IconSymbol size={22} name="shopping-cart" color={color} /> }} />
       <Tabs.Screen name="timer" options={{ title: "Zamanlayıcı", tabBarIcon: ({ color }) => <IconSymbol size={22} name="timer" color={color} /> }} />
+      <Tabs.Screen name="meal-plan" options={{ title: "Takvim", tabBarIcon: ({ color }) => <IconSymbol size={22} name="calendar" color={color} /> }} />
     </Tabs>
   );
 }

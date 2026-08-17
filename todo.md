@@ -216,3 +216,6 @@
 - [ ] Tüm form ve not yazma alanlarına sesle yazma simgesi ve sistem klavyesi entegrasyonu eklemek
 - [ ] Sabah, öğle, akşam ve saatli ara öğünlerden oluşan, haftalık menüleri otomatik reyonlu alışveriş listesiyle birleştiren takvim planlayıcı eklemek
 - [ ] Pişirme modunda eller serbest sesli adım ilerletme ve ekranın kapanmasını önleyen akıllı ekran koruma modu eklemek
+- [x] Tüm yazı yazılacak ekranlarda sesle yazma simgesi ve gerçek dikte/sesli metin girişi
+- [x] Alt menüye (Ana Sayfa, Ara, Listem, Market, Zamanlayıcı, Takvim) Takvim sekmesinin eklenmesi
+- [x] Eller serbest pişirme modunda sesli komutlarla (ileri, geri, dur, başlat) adım ilerletme
