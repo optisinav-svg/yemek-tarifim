@@ -211,3 +211,8 @@
 - [ ] Sayaç zil sesi yüksekliği ve türü iyileştirmesi şimdilik ertelendi (mevcut standart uyarı sesi kullanılacak).
 - [ ] Sayaç penceresini sürükleyerek yer değiştirme özelliği şimdilik ertelendi (widget sağ üst köşede sabit kalacak).
 - [x] Mevcut tüm tamamlanmış özellikler GitHub deposuna aktarılacak.
+## Kullanıcı yeni istekleri — 17.08.2026 (Son Eklemeler)
+
+- [ ] Tüm form ve not yazma alanlarına sesle yazma simgesi ve sistem klavyesi entegrasyonu eklemek
+- [ ] Sabah, öğle, akşam ve saatli ara öğünlerden oluşan, haftalık menüleri otomatik reyonlu alışveriş listesiyle birleştiren takvim planlayıcı eklemek
+- [ ] Pişirme modunda eller serbest sesli adım ilerletme ve ekranın kapanmasını önleyen akıllı ekran koruma modu eklemek
