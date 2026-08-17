@@ -30,8 +30,20 @@ async function playCompletionChime() {
       shouldRouteThroughEarpiece: false,
     });
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
-    completionPlayer.seekTo(0);
-    completionPlayer.play();
+    for (let i = 0; i < 5; i++) {
+      try {
+        completionPlayer.seekTo(0);
+        completionPlayer.play();
+      } catch {}
+      if (Platform.OS !== "web") {
+        try {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+        } catch {}
+      }
+      if (i < 4) {
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+      }
+    }
   } catch {
     // The visual completed state and haptic feedback remain available if audio is unavailable.
   }
@@ -318,13 +330,16 @@ export function ActiveTimerWidget() {
   const panResponder = useMemo(
     () =>
       PanResponder.create({
-        onMoveShouldSetPanResponder: (_event, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
+        onStartShouldSetPanResponder: () => true,
+        onMoveShouldSetPanResponder: (_event, gestureState) => Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2,
         onPanResponderGrant: () => {
           didDragRef.current = false;
           dragStartRef.current = positionRef.current ?? defaultPosition;
         },
         onPanResponderMove: (_event, gestureState) => {
-          didDragRef.current = true;
+          if (Math.abs(gestureState.dx) > 2 || Math.abs(gestureState.dy) > 2) {
+            didDragRef.current = true;
+          }
           const start = dragStartRef.current ?? defaultPosition;
           const next = clampWidgetPosition(
             { x: start.x + gestureState.dx, y: start.y + gestureState.dy },
