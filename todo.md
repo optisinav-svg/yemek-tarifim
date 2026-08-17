@@ -129,3 +129,6 @@
 - [x] Yerel kayıtlı tarifleri ve alışveriş listesini kullanıcı hesabına sunucu üzerinden senkronize etmek
 - [x] Kullanıcı tariflerinin sahiplik ve görünürlük kurallarını uçtan uca uygulamak
 - [x] Oturum açma, çıkış, yetkisiz erişim ve veri senkronizasyonu testlerini eklemek
+
+- [x] Sayaç süresi bitince Android ve iOS'ta güvenilir sesli uyarı vermek; dokununca istemeden kapanmasını önlemek
+- [x] Sayaç penceresini kullanıcı parmağıyla sürükleyerek ekran içinde taşıyabilmek ve konumu korumak

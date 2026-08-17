@@ -1,9 +1,10 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
 import * as Notifications from "expo-notifications";
 import { useRouter } from "expo-router";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
-import { Platform, Pressable, StyleSheet, Text, View } from "react-native";
+import { PanResponder, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useColors } from "@/hooks/use-colors";
@@ -11,7 +12,30 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { formatTimer } from "./kitchen-timer-utils";
 
 const TIMER_STORAGE_KEY = "yemek-tarifim.kitchen-timer.v1";
+const TIMER_WIDGET_POSITION_KEY = "yemek-tarifim.kitchen-timer.widget-position.v1";
 const TIMER_CHANNEL_ID = "kitchen-timer";
+const WIDGET_WIDTH = 174;
+const WIDGET_HEIGHT = 52;
+
+let completionPlayer: ReturnType<typeof createAudioPlayer> | null = null;
+
+async function playCompletionChime() {
+  try {
+    await setAudioModeAsync({
+      playsInSilentMode: true,
+      interruptionMode: "duckOthers",
+      interruptionModeAndroid: "duckOthers",
+      allowsRecording: false,
+      shouldPlayInBackground: false,
+      shouldRouteThroughEarpiece: false,
+    });
+    completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
+    completionPlayer.seekTo(0);
+    completionPlayer.play();
+  } catch {
+    // The visual completed state and haptic feedback remain available if audio is unavailable.
+  }
+}
 
 if (Platform.OS !== "web") {
   Notifications.setNotificationHandler({
@@ -126,6 +150,7 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
     if (state.status === "running") completionHandled.current = false;
     if (state.status !== "completed" || completionHandled.current) return;
     completionHandled.current = true;
+    void playCompletionChime();
     if (Platform.OS !== "web") {
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => undefined);
     }
@@ -238,33 +263,134 @@ export function useKitchenTimer() {
   return value;
 }
 
+type WidgetPosition = { x: number; y: number };
+
+function clampWidgetPosition(position: WidgetPosition, width: number, height: number, topInset: number, bottomInset: number): WidgetPosition {
+  const maxX = Math.max(12, width - WIDGET_WIDTH - 12);
+  const maxY = Math.max(topInset + 8, height - bottomInset - WIDGET_HEIGHT - 8);
+  return {
+    x: Math.min(Math.max(12, position.x), maxX),
+    y: Math.min(Math.max(topInset + 8, position.y), maxY),
+  };
+}
+
 export function ActiveTimerWidget() {
   const colors = useColors();
   const insets = useSafeAreaInsets();
   const router = useRouter();
+  const { width, height } = useWindowDimensions();
   const { status, remainingSeconds, pause, resume, dismiss } = useKitchenTimer();
+  const defaultPosition = clampWidgetPosition({ x: width - WIDGET_WIDTH - 14, y: insets.top + 8 }, width, height, insets.top, insets.bottom);
+  const [position, setPosition] = useState<WidgetPosition | null>(null);
+  const positionRef = useRef<WidgetPosition | null>(null);
+  const didDragRef = useRef(false);
+  const dragStartRef = useRef<WidgetPosition | null>(null);
+
+  useEffect(() => {
+    let active = true;
+    void AsyncStorage.getItem(TIMER_WIDGET_POSITION_KEY).then((saved) => {
+      if (!active || !saved) return;
+      try {
+        const parsed = JSON.parse(saved) as Partial<WidgetPosition>;
+        if (typeof parsed.x !== "number" || typeof parsed.y !== "number") return;
+        const next = clampWidgetPosition(parsed as WidgetPosition, width, height, insets.top, insets.bottom);
+        positionRef.current = next;
+        setPosition(next);
+      } catch {
+        // Ignore an invalid saved position and use the default location.
+      }
+    });
+    return () => {
+      active = false;
+    };
+  }, [height, insets.bottom, insets.top, width]);
+
+  useEffect(() => {
+    const current = positionRef.current;
+    if (!current) return;
+    const next = clampWidgetPosition(current, width, height, insets.top, insets.bottom);
+    if (next.x === current.x && next.y === current.y) return;
+    positionRef.current = next;
+    setPosition(next);
+    void AsyncStorage.setItem(TIMER_WIDGET_POSITION_KEY, JSON.stringify(next));
+  }, [height, insets.bottom, insets.top, width]);
+
+  const panResponder = useMemo(
+    () =>
+      PanResponder.create({
+        onMoveShouldSetPanResponder: (_event, gestureState) => Math.abs(gestureState.dx) > 4 || Math.abs(gestureState.dy) > 4,
+        onPanResponderGrant: () => {
+          didDragRef.current = false;
+          dragStartRef.current = positionRef.current ?? defaultPosition;
+        },
+        onPanResponderMove: (_event, gestureState) => {
+          didDragRef.current = true;
+          const start = dragStartRef.current ?? defaultPosition;
+          const next = clampWidgetPosition(
+            { x: start.x + gestureState.dx, y: start.y + gestureState.dy },
+            width,
+            height,
+            insets.top,
+            insets.bottom,
+          );
+          positionRef.current = next;
+          setPosition(next);
+        },
+        onPanResponderRelease: () => {
+          const current = positionRef.current;
+          if (current) void AsyncStorage.setItem(TIMER_WIDGET_POSITION_KEY, JSON.stringify(current));
+          dragStartRef.current = null;
+        },
+        onPanResponderTerminate: () => {
+          dragStartRef.current = null;
+        },
+      }),
+    [defaultPosition, height, insets.bottom, insets.top, width],
+  );
   const visible = status === "running" || status === "paused" || status === "completed";
   if (!visible) return null;
 
   const completed = status === "completed";
   const paused = status === "paused";
   const label = completed ? "Süre doldu" : formatTimer(remainingSeconds);
-  const sublabel = completed ? "Dokunup kapat" : paused ? "Duraklatıldı" : "Mutfak sayacı";
+  const sublabel = completed ? "Uyarı devam ediyor" : paused ? "Duraklatıldı" : "Mutfak sayacı";
+  const widgetPosition = position ?? defaultPosition;
 
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <Pressable
+        {...panResponder.panHandlers}
         accessibilityRole="button"
-        accessibilityLabel={completed ? "Süre tamamlandı, zamanlayıcıyı kapat" : "Aktif mutfak zamanlayıcısını aç"}
-        onPress={() => (completed ? void dismiss() : router.push("/timer"))}
-        style={[styles.widget, { top: insets.top + 8, backgroundColor: completed ? colors.success : colors.foreground, borderColor: completed ? colors.success : colors.foreground }]}
+        accessibilityLabel={completed ? "Süre tamamlandı, uyarıyı kapatmak için kapat düğmesine dokunun" : "Aktif mutfak zamanlayıcısını aç veya taşımak için sürükle"}
+        accessibilityHint="Sayaç penceresini parmağınızla sürükleyerek ekran içinde taşıyabilirsiniz"
+        onPress={() => {
+          if (didDragRef.current) {
+            didDragRef.current = false;
+            return;
+          }
+          if (!completed) router.push("/timer");
+        }}
+        style={[
+          styles.widget,
+          { left: widgetPosition.x, top: widgetPosition.y, backgroundColor: completed ? colors.success : colors.foreground, borderColor: completed ? colors.success : colors.foreground },
+        ]}
       >
         <IconSymbol name={completed ? "check" : "timer"} size={16} color={completed ? "#FFFFFF" : colors.background} />
         <View style={styles.widgetCopy}>
           <Text style={styles.widgetTime}>{label}</Text>
           <Text style={styles.widgetSubtitle}>{sublabel}</Text>
         </View>
-        {!completed && (
+        {completed ? (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Süre uyarısını kapat"
+            onPress={() => void dismiss()}
+            hitSlop={8}
+            style={styles.widgetControl}
+          >
+            <IconSymbol name="close" size={15} color={colors.background} />
+          </Pressable>
+        ) : (
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={paused ? "Zamanlayıcıyı devam ettir" : "Zamanlayıcıyı duraklat"}
@@ -281,7 +407,7 @@ export function ActiveTimerWidget() {
 }
 
 const styles = StyleSheet.create({
-  widget: { position: "absolute", right: 14, zIndex: 20, elevation: 10, flexDirection: "row", alignItems: "center", minWidth: 142, maxWidth: 188, borderWidth: 1, borderRadius: 17, paddingHorizontal: 11, paddingVertical: 8, shadowColor: "#000000", shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
+  widget: { position: "absolute", zIndex: 20, elevation: 10, width: WIDGET_WIDTH, height: WIDGET_HEIGHT, flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 17, paddingHorizontal: 11, shadowColor: "#000000", shadowOpacity: 0.18, shadowRadius: 9, shadowOffset: { width: 0, height: 4 } },
   widgetCopy: { flex: 1, marginHorizontal: 8 },
   widgetTime: { color: "#FFFFFF", fontSize: 14, fontWeight: "900", letterSpacing: 0.2 },
   widgetSubtitle: { color: "#FFF3E6", marginTop: 2, fontSize: 9, fontWeight: "700" },
