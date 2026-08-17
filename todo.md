@@ -36,9 +36,9 @@
 - [x] Malzemeleri miktar, birim ve ad olarak yapılandırılmış biçimde saklamak
 - [x] Hazırlama, yapılış ve toplam süre alanlarını eklemek
 - [x] Tarife porsiyon sayısı eklemek
-- [ ] En fazla üç fotoğraf ve video ekleme akışını oluşturmak
-- [ ] Fotoğraf/PDF/görselden metin aktarma için OCR akışını eklemek
-- [ ] OCR sonucunu yayın öncesi düzenleme ve onay ekranından geçirmek
+- [x] En fazla üç fotoğraf ve video ekleme akışını oluşturmak
+- [x] Fotoğraf/PDF/görselden metin aktarma için OCR akışını eklemek
+- [x] OCR sonucunu yayın öncesi düzenleme ve onay ekranından geçirmek
 - [ ] Kullanıcının sistem klavyesiyle sesli yazma kullanımını desteklemek
 - [ ] Kullanıcı tariflerinin tüm kullanıcılarca görülebilmesini sağlamak
 - [x] Kullanıcının kendi tarifini düzenleyebilmesini sağlamak
@@ -114,6 +114,7 @@
 
 - [x] İlk çalışan sürümü `optisinav-svg/yemek-tarifim` GitHub deposunun `main` dalına göndermek (commit: `9eb3136`, 17.08.2026)
 - [ ] Sonraki geliştirmelerde GitHub’a düzenli commit ve sürüm etiketleri eklemek
+- [ ] Expo Go QR önizleme bağlantısını telefon üzerinde doğrulamak ve bağlantı sorununu gidermek
 
 ## Sonraki aşama: kullanıcı hesabı ve sunucu senkronizasyonu
 
