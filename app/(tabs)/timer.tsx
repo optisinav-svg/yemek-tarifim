@@ -34,8 +34,7 @@ export default function TimerScreen() {
 
   const handleStartCustom = async () => {
     if (totalCustomSeconds <= 0) return;
-    await setPreset(totalCustomSeconds);
-    await start();
+    await start(totalCustomSeconds);
   };
 
   const handleMainAction = () => {
@@ -80,12 +79,12 @@ export default function TimerScreen() {
 
                 {/* Minutes Picker */}
                 <View style={[styles.pickerBox, { backgroundColor: colors.background, borderColor: colors.border }]}>
-                  <Pressable onPress={() => handleAdjustMinutes(5)} style={styles.pickerButton} accessibilityRole="button" accessibilityLabel="Dakikayı 5 artır">
+                  <Pressable onPress={() => handleAdjustMinutes(1)} style={styles.pickerButton} accessibilityRole="button" accessibilityLabel="Dakikayı artır">
                     <IconSymbol name="add" size={18} color={colors.primary} />
                   </Pressable>
                   <Text style={[styles.pickerValue, { color: colors.foreground }]}>{String(customMinutes).padStart(2, "0")}</Text>
                   <Text style={[styles.pickerUnit, { color: colors.muted }]}>dakika</Text>
-                  <Pressable onPress={() => handleAdjustMinutes(-5)} style={styles.pickerButton} accessibilityRole="button" accessibilityLabel="Dakikayı 5 azalt">
+                  <Pressable onPress={() => handleAdjustMinutes(-1)} style={styles.pickerButton} accessibilityRole="button" accessibilityLabel="Dakikayı azalt">
                     <IconSymbol name="remove" size={18} color={colors.muted} />
                   </Pressable>
                 </View>

@@ -198,12 +198,12 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const start = useCallback(async (seconds?: number) => {
-    const requestedSeconds = seconds ?? (state.remainingSeconds > 0 ? state.remainingSeconds : state.durationSeconds);
+    const requestedSeconds = seconds !== undefined ? seconds : (state.remainingSeconds > 0 ? state.remainingSeconds : state.durationSeconds);
     const totalSeconds = Math.max(1, Math.round(requestedSeconds));
     await cancelNotification(state.notificationId);
     const endsAt = Date.now() + totalSeconds * 1000;
     const notificationId = await scheduleNotification(endsAt);
-    setState({ durationSeconds: Math.max(state.durationSeconds, totalSeconds), remainingSeconds: totalSeconds, endsAt, notificationId, status: "running" });
+    setState({ durationSeconds: totalSeconds, remainingSeconds: totalSeconds, endsAt, notificationId, status: "running" });
   }, [cancelNotification, scheduleNotification, state.durationSeconds, state.notificationId, state.remainingSeconds]);
 
   const pause = useCallback(async () => {
