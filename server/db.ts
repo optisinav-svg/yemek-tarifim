@@ -1,6 +1,6 @@
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertRecipe, InsertUser, recipes, users } from "../drizzle/schema";
+import { InsertRecipe, InsertSavedRecipe, InsertShoppingItem, InsertUser, recipes, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -90,4 +90,53 @@ export async function hideRecipe(id: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(recipes).set({ status: "hidden" }).where(eq(recipes.id, id));
+}
+
+export async function getUserSyncState(userId: number) {
+  const db = await getDb();
+  if (!db) return { savedRecipeIds: [] as string[], shoppingItems: [] as Array<{ id: string; name: string; amount: string; checked: boolean }> };
+
+  const [saved, shopping] = await Promise.all([
+    db.select({ recipeKey: savedRecipes.recipeKey }).from(savedRecipes).where(eq(savedRecipes.userId, userId)),
+    db.select({ itemKey: shoppingItems.itemKey, name: shoppingItems.name, amount: shoppingItems.amount, checked: shoppingItems.checked })
+      .from(shoppingItems)
+      .where(eq(shoppingItems.userId, userId)),
+  ]);
+
+  return {
+    savedRecipeIds: saved.map((item) => item.recipeKey),
+    shoppingItems: shopping.map((item) => ({ id: item.itemKey, name: item.name, amount: item.amount, checked: item.checked })),
+  };
+}
+
+export async function replaceUserSyncState(
+  userId: number,
+  data: {
+    savedRecipeIds: string[];
+    shoppingItems: Array<{ id: string; name: string; amount: string; checked: boolean }>;
+  },
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async (tx) => {
+    await tx.delete(savedRecipes).where(eq(savedRecipes.userId, userId));
+    await tx.delete(shoppingItems).where(eq(shoppingItems.userId, userId));
+
+    if (data.savedRecipeIds.length > 0) {
+      const savedRows: InsertSavedRecipe[] = data.savedRecipeIds.map((recipeKey) => ({ userId, recipeKey }));
+      await tx.insert(savedRecipes).values(savedRows);
+    }
+
+    if (data.shoppingItems.length > 0) {
+      const shoppingRows: InsertShoppingItem[] = data.shoppingItems.map((item) => ({
+        userId,
+        itemKey: item.id,
+        name: item.name,
+        amount: item.amount,
+        checked: item.checked,
+      }));
+      await tx.insert(shoppingItems).values(shoppingRows);
+    }
+  });
 }

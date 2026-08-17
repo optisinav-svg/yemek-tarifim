@@ -11,7 +11,7 @@
 
 ## Kullanıcı ve güvenlik
 
-- [ ] Kullanıcı kaydı/girişi ve güvenli oturum yönetimini tamamlamak
+- [x] Kullanıcı kaydı/girişi ve güvenli oturum yönetimini tamamlamak
 - [ ] Profil adı, soyadı, kullanıcı adı, e-posta ve profil fotoğrafı düzenleme akışını tamamlamak
 - [ ] Sunucu tarafı kimlik doğrulama, rol tabanlı yetkilendirme ve admin koruması eklemek
 - [ ] Girdi doğrulama, XSS/SQL injection önlemleri, rate limiting ve medya doğrulaması eklemek
@@ -109,3 +109,16 @@
 - [ ] Kullanıcı akışlarında boş onPress ve ölü ekran bırakmamak
 - [ ] GitHub deposunu bağlamak ve açıklayıcı README hazırlamak
 - [x] İlk tamamlanmış sürüm için checkpoint oluşturmak
+
+## GitHub aktarım geçmişi
+
+- [x] İlk çalışan sürümü `optisinav-svg/yemek-tarifim` GitHub deposunun `main` dalına göndermek (commit: `9eb3136`, 17.08.2026)
+- [ ] Sonraki geliştirmelerde GitHub’a düzenli commit ve sürüm etiketleri eklemek
+
+## Sonraki aşama: kullanıcı hesabı ve sunucu senkronizasyonu
+
+- [x] Kullanıcı hesabı oluşturma/giriş ekranlarını mevcut kimlik doğrulama altyapısına bağlamak
+- [x] Oturum durumunu Android, iOS ve web üzerinde güvenli biçimde yönetmek
+- [x] Yerel kayıtlı tarifleri ve alışveriş listesini kullanıcı hesabına sunucu üzerinden senkronize etmek
+- [x] Kullanıcı tariflerinin sahiplik ve görünürlük kurallarını uçtan uca uygulamak
+- [x] Oturum açma, çıkış, yetkisiz erişim ve veri senkronizasyonu testlerini eklemek

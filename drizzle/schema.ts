@@ -1,4 +1,4 @@
-import { index, int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { boolean, index, int, mysqlEnum, mysqlTable, text, timestamp, uniqueIndex, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -40,5 +40,33 @@ export const recipes = mysqlTable("recipes", {
 
 export type User = typeof users.$inferSelect;
 export type InsertUser = typeof users.$inferInsert;
+export const savedRecipes = mysqlTable("saved_recipes", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  recipeKey: varchar("recipeKey", { length: 120 }).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userRecipeIdx: uniqueIndex("saved_recipes_user_recipe_idx").on(table.userId, table.recipeKey),
+  userIdx: index("saved_recipes_user_idx").on(table.userId),
+}));
+
+export const shoppingItems = mysqlTable("shopping_items", {
+  id: int("id").autoincrement().primaryKey(),
+  userId: int("userId").notNull(),
+  itemKey: varchar("itemKey", { length: 160 }).notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+  amount: varchar("amount", { length: 80 }).notNull(),
+  checked: boolean("checked").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  userItemIdx: uniqueIndex("shopping_items_user_item_idx").on(table.userId, table.itemKey),
+  userIdx: index("shopping_items_user_idx").on(table.userId),
+}));
+
 export type Recipe = typeof recipes.$inferSelect;
 export type InsertRecipe = typeof recipes.$inferInsert;
+export type SavedRecipe = typeof savedRecipes.$inferSelect;
+export type InsertSavedRecipe = typeof savedRecipes.$inferInsert;
+export type ShoppingItem = typeof shoppingItems.$inferSelect;
+export type InsertShoppingItem = typeof shoppingItems.$inferInsert;

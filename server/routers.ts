@@ -2,7 +2,7 @@ import { z } from "zod";
 
 import { getSessionCookieOptions } from "./_core/cookies";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { createRecipe, getRecipeById, hideRecipe, listPublishedRecipes, updateRecipe } from "./db";
+import { createRecipe, getRecipeById, getUserSyncState, hideRecipe, listPublishedRecipes, replaceUserSyncState, updateRecipe } from "./db";
 
 const ingredientSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -29,6 +29,16 @@ const listInputSchema = z.object({
   search: z.string().trim().max(120).optional(),
 }).optional();
 
+const syncStateSchema = z.object({
+  savedRecipeIds: z.array(z.string().trim().min(1).max(120)).max(500),
+  shoppingItems: z.array(z.object({
+    id: z.string().trim().min(1).max(160),
+    name: z.string().trim().min(1).max(160),
+    amount: z.string().trim().max(80),
+    checked: z.boolean(),
+  })).max(500),
+});
+
 function decodeRecipe(row: Awaited<ReturnType<typeof getRecipeById>>) {
   if (!row) return null;
   let ingredients: unknown[] = [];
@@ -47,6 +57,13 @@ export const appRouter = router({
     logout: publicProcedure.mutation(({ ctx }) => {
       const cookieOptions = getSessionCookieOptions(ctx.req);
       ctx.res.clearCookie("session", { ...cookieOptions, maxAge: -1 });
+      return { success: true } as const;
+    }),
+  }),
+  sync: router({
+    get: protectedProcedure.query(async ({ ctx }) => getUserSyncState(ctx.user.id)),
+    replace: protectedProcedure.input(syncStateSchema).mutation(async ({ ctx, input }) => {
+      await replaceUserSyncState(ctx.user.id, input);
       return { success: true } as const;
     }),
   }),

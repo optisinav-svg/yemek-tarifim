@@ -15,6 +15,16 @@ describe("recipe router security", () => {
     expect(Array.isArray(result)).toBe(true);
   });
 
+  it("rejects anonymous sync reads", async () => {
+    const caller = appRouter.createCaller(context);
+    await expect(caller.sync.get()).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
+  it("rejects anonymous sync writes", async () => {
+    const caller = appRouter.createCaller(context);
+    await expect(caller.sync.replace({ savedRecipeIds: ["recipe-1"], shoppingItems: [] })).rejects.toMatchObject({ code: "UNAUTHORIZED" });
+  });
+
   it("rejects anonymous recipe creation", async () => {
     const caller = appRouter.createCaller(context);
     await expect(caller.recipes.create({

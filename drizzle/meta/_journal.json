@@ -15,6 +15,13 @@
       "when": 1786893699845,
       "tag": "0001_moaning_starfox",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1786959622099,
+      "tag": "0002_zippy_randall_flagg",
+      "breakpoints": true
     }
   ]
 }
