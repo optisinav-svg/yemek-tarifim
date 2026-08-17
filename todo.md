@@ -5,6 +5,7 @@
 - [x] Android, iOS ve web hedeflerini Expo tabanlı ortak kod yapısıyla başlatmak
 - [x] Mobil arayüz tasarım planını `design.md` dosyasına yazmak
 - [ ] Türkiye ile başlayıp ileride dünya mutfaklarına genişleyebilecek ülke/mutfak veri modelini oluşturmak
+- [x] Tarif ekleme ekranında tarifin ülkesini seçebilme ve seçilen ülkeyi kaydetme
 - [ ] Güvenli sunucu, veritabanı, dosya depolama ve tRPC API sınırlarını yapılandırmak
 - [x] Uygulama markası, tema renkleri ve erişilebilirlik tokenlarını uygulamak
 - [x] Benzersiz uygulama logosu üretmek ve Expo marka yapılandırmasına bağlamak
