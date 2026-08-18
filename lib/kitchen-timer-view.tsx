@@ -51,14 +51,18 @@ async function playCompletionChime() {
       shouldRouteThroughEarpiece: false,
     });
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
-    completionPlayer.volume = 1.0;
-    completionPlayer.seekTo(0);
-    completionPlayer.play();
-    if (Platform.OS !== "web") {
+    
+    for (let i = 0; i < 3; i++) {
       try {
-        await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-        await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        completionPlayer.volume = 1.0;
+        completionPlayer.seekTo(0);
+        completionPlayer.play();
+        if (Platform.OS !== "web") {
+          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
+        }
       } catch {}
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   } catch {
     // The visual completed state and haptic feedback remain available if audio is unavailable.
