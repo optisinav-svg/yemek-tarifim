@@ -272,3 +272,13 @@
 
 - [ ] Google Takvim entegrasyonunu araştırmak: haftalık yemek planını kullanıcının seçtiği Google Takvim'e etkinlik olarak aktarabilmek; uygulama içi Takvim ekranından ayrı kapsam olarak tasarlamak
 - [ ] Google Takvim bağlantısı için OAuth izinleri, yönlendirme adresleri ve güvenli token saklama akışını hazırlamak; kullanıcı onayı olmadan hesap erişimi başlatmamak
+
+- [ ] ACİL: ESM production düzeltmesini GitHub'a aktar, Render deploy başlat ve gastronotlar.com ana sayfasını 200 yanıtıyla doğrula; web çalışmadan sonraki aşamaya geçme
+
+- [ ] WEB SONRASI — Sayaç penceresi: telefonda parmakla tutulup farklı konuma sürüklenebilmeli; konum ekranda sabitlenmemeli ve uygulama yeniden açıldığında korunmalı
+- [ ] WEB SONRASI — Sayaç alarmı: yüksek duyulabilirlikte gerçek ses kaynağıyla en az 15 saniye çalmalı ve iki tam tekrar yapmalı; cihaz sessiz/medya ses seviyesi kısıtlarını açıkça test et
+- [ ] WEB SONRASI — Takvim: alt gezinme satırında görünür Takvim sekmesi olmalı ve açılabilmeli
+- [ ] WEB SONRASI — Pişirme modu: sesli kontrol gerçekten çalışmıyorsa yanıltıcı “Sesli kontrol aktif” metni gösterilmemeli; çalışıyorsa gerçek ses komutuyla ileri/geri doğrulanmalı
+- [ ] WEB SONRASI — Tarif paylaşma: tarif ekranındaki “Tarifi paylaş” mevcut çalışan paylaşım akışıyla aynı sistem paylaşım ekranını açmalı; ana sayfaya yönlendirmemeli
+
+- [x] WEB SONRASI — Expo Go uyumluluğu: `expo-notifications` uzak bildirim modülünü Expo Go’da koşulsuz içe aktarmayı kaldır; konsoldaki uyarıyı temizle; gerçek uzak bildirim gereksinimini development build notu olarak koru

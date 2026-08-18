@@ -1,7 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { createAudioPlayer, setAudioModeAsync } from "expo-audio";
 import * as Haptics from "expo-haptics";
-import * as Notifications from "expo-notifications";
+import Constants, { ExecutionEnvironment } from "expo-constants";
 import { useRouter } from "expo-router";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { PanResponder, Platform, Pressable, StyleSheet, Text, View, useWindowDimensions } from "react-native";
@@ -18,6 +18,18 @@ const WIDGET_WIDTH = 174;
 const WIDGET_HEIGHT = 52;
 
 let completionPlayer: ReturnType<typeof createAudioPlayer> | null = null;
+type NotificationsModule = typeof import("expo-notifications");
+let notificationsModule: NotificationsModule | null | undefined;
+
+function isExpoGoStoreClient() {
+  return Constants.executionEnvironment === ExecutionEnvironment.StoreClient;
+}
+
+async function getNotifications(): Promise<NotificationsModule | null> {
+  if (Platform.OS === "web" || isExpoGoStoreClient()) return null;
+  notificationsModule ??= await import("expo-notifications");
+  return notificationsModule;
+}
 
 function stopCompletionChime() {
   try {
@@ -53,7 +65,9 @@ async function playCompletionChime() {
   }
 }
 
-if (Platform.OS !== "web") {
+async function configureNotificationHandler() {
+  const Notifications = await getNotifications();
+  if (!Notifications) return;
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
       shouldPlaySound: true,
@@ -63,6 +77,8 @@ if (Platform.OS !== "web") {
     }),
   });
 }
+
+void configureNotificationHandler();
 
 type TimerStatus = "idle" | "running" | "paused" | "completed";
 
@@ -173,7 +189,9 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
   }, [state.status]);
 
   const cancelNotification = useCallback(async (notificationId: string | null) => {
-    if (!notificationId || Platform.OS === "web") return;
+    if (!notificationId) return;
+    const Notifications = await getNotifications();
+    if (!Notifications) return;
     try {
       await Notifications.cancelScheduledNotificationAsync(notificationId);
     } catch {
@@ -183,6 +201,8 @@ export function KitchenTimerProvider({ children }: { children: ReactNode }) {
 
   const scheduleNotification = useCallback(async (endsAt: number) => {
     if (Platform.OS === "web") return null;
+    const Notifications = await getNotifications();
+    if (!Notifications) return null;
     try {
       if (Platform.OS === "android") {
         await Notifications.setNotificationChannelAsync(TIMER_CHANNEL_ID, {
