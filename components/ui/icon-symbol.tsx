@@ -24,6 +24,7 @@ const MAPPING = {
   "search": "search",
   "menu-book": "menu-book",
   "timer": "timer",
+  "calendar": "calendar-today",
   "clock": "schedule",
   "person": "person-outline",
   "settings": "settings",

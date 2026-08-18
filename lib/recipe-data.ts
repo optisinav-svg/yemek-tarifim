@@ -160,3 +160,7 @@ export function getRecipes(country: CountryCode, category?: string, search?: str
 export function formatTotalTime(recipe: Recipe) {
   return `${recipe.prepMinutes + recipe.cookMinutes} dk`;
 }
+
+export function getCategoryCount(categoryName: string, country: CountryCode = "ALL") {
+  return getRecipes(country, categoryName).length;
+}
