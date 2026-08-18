@@ -6,6 +6,8 @@ import { getSessionCookieOptions } from "./_core/cookies";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
+import { authCustomRouter } from "./routers/auth-custom";
+import { systemRouter } from "./_core/systemRouter";
 
 const ingredientSchema = z.object({
   name: z.string().trim().min(1).max(120),
@@ -151,9 +153,9 @@ async function saveRecipeMedia(media: Array<z.infer<typeof mediaInputSchema>>, r
 }
 
 export const appRouter = router({
-  system: router({
-    health: publicProcedure.query(() => ({ status: "ok" as const })),
-  }),
+  system: systemRouter,
+  authCustom: authCustomRouter,
+  // app routers
   auth: router({
     me: publicProcedure.query((opts) => opts.ctx.user),
     logout: publicProcedure.mutation(({ ctx }) => {

@@ -19,6 +19,7 @@ import {
 import type { EdgeInsets, Metrics, Rect } from "react-native-safe-area-context";
 
 import { trpc, createTRPCClient } from "@/lib/trpc";
+import { AuthGate } from "@/components/auth-gate";
 import { initManusRuntime, subscribeSafeAreaInsets } from "@/lib/_core/manus-runtime";
 
 const DEFAULT_WEB_INSETS: EdgeInsets = { top: 0, right: 0, bottom: 0, left: 0 };
@@ -80,19 +81,20 @@ export default function RootLayout() {
     };
   }, [initialInsets, initialFrame]);
 
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+
   const content = (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AppStoreProvider>
       <KitchenTimerProvider>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          {/* Default to hiding native headers so raw route segments don't appear (e.g. "(tabs)", "products/[id]"). */}
-          {/* If a screen needs the native header, explicitly enable it and set a human title via Stack.Screen options. */}
-          {/* in order for ios apps tab switching to work properly, use presentation: "fullScreenModal" for login page, whenever you decide to use presentation: "modal*/}
-          <Stack screenOptions={{ headerShown: false }}>
-            <Stack.Screen name="(tabs)" />
-            <Stack.Screen name="oauth/callback" />
-          </Stack>
+          <AuthGate isAuthenticated={isAuthenticated} onLoginSuccess={() => setIsAuthenticated(true)}>
+            <Stack screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="oauth/callback" />
+            </Stack>
+          </AuthGate>
           <StatusBar style="auto" />
         </QueryClientProvider>
       </trpc.Provider>

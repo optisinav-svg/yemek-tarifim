@@ -286,3 +286,10 @@
 - [x] Render deploy hatası teşhisi: `react-native-css-interop/.cache/web.css` dosyası build sırasında SHA-1 okuma hatasına yol açıyor. Build betiğinde `npx expo export --platform web` adımının eksik olması veya node_modules önbelleğinin sızması düzeltilecek.
 
 - [ ] Kullanıcı kayıt ve giriş ekranını istenen alanlarla (e-posta, ad, soyad, kullanıcı adı, şifre, beni hatırla, maskeli şifre, şifremi unuttum ve e-posta doğrulama) güncellemek ve doğrulamak
+
+- [ ] Ana sayfayı doğrulanmamış ziyaretçiye kapat; uygulama ilk açılışta zorunlu Kayıt/Giriş ekranını göstermeli
+- [ ] Kayıt akışında kullanıcı adı, soyadı ve e-posta al; e-posta onay kodu/bağlantısı doğrulanmadan ana sayfaya geçişe izin verme
+- [ ] Doğrulama sonrasında şifreyi iki kez alıp eşleşmeyi zorunlu kıl; şifreyi güvenli biçimde sakla
+- [ ] Giriş ekranında e-posta dolu, şifre maskeli ve “Beni Hatırla” seçili varsayılan durumunu oluştur; başarılı girişten sonra uygulamayı aç
+- [ ] Giriş ekranındaki “Şifremi Unuttum” gerçek sıfırlama e-postası göndermeli
+- [ ] Resend veya eşdeğer e-posta sağlayıcısını bağlamadan gerçek e-posta gönderimi tamamlandı sayma
