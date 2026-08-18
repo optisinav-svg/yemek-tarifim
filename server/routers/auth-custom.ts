@@ -17,12 +17,13 @@ export const authCustomRouter = router({
       })
     )
     .mutation(async ({ input }) => {
-      const db = await getDb();
-      if (!db) throw new Error("Veritabanı bağlantısı kurulamadı");
+      try {
+        const db = await getDb();
+        if (!db) throw new Error("Veritabanı bağlantısı kurulamadı");
 
-      const code = Math.floor(100000 + Math.random() * 900000).toString();
-      
-      const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
+        const code = Math.floor(100000 + Math.random() * 900000).toString();
+        
+        const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
       
       if (existing.length > 0) {
         // Güncelle
@@ -60,6 +61,10 @@ export const authCustomRouter = router({
 
       await sendEmail(input.email, "Gastronotlar - E-posta Doğrulama Kodunuz", html);
       return { success: true, message: "Doğrulama kodu e-postanıza gönderildi." };
+      } catch (error: any) {
+        console.error("[Auth] requestVerificationCode error:", error);
+        throw new Error("Kayıt hatası: " + (error?.message || error));
+      }
     }),
 
   // 2. Adım: Kod kontrolü
