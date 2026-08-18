@@ -254,7 +254,7 @@
 - [x] Render servisinde `GET /` isteğinin neden uygulama HTML’i döndürmediğini denetle.
 - [x] Expo web üretim çıktısının Render üretim sunucusundan doğru klasörden sunulmasını sağla.
 - [x] Render’ın `PORT` değişkeniyle çalışan üretim başlangıç komutunu doğrula.
-- [ ] SPA yolları, ana sayfa ve API başlangıç akışını üretimde test et.
+- [x] SPA yolları, ana sayfa ve API başlangıç akışını üretimde test et.\n- [x] optisinav-svg GitHub deposu yazma yetkisi ve üretim aktarım düzeltmesi
 - [ ] `https://gastronotlar.com` ve `https://www.gastronotlar.com` adreslerini bağımsız olarak doğrula.
 - [ ] Web açılışı doğrulanmadan Google Play ve iOS mağaza hazırlığına geçme.
 - [ ] Kullanıcıya yalnızca tek işlem ver; kullanıcı sonucu bildirmeden sonraki işlemi isteme.
