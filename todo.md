@@ -260,3 +260,15 @@
 - [ ] Kullanıcıya yalnızca tek işlem ver; kullanıcı sonucu bildirmeden sonraki işlemi isteme.
 
 > Not: Alan adı ve SSL doğrulandı; ancak `GET /` hatası nedeniyle web yayını henüz tamamlandı kabul edilmeyecek.
+
+- [ ] Sayaç penceresini sürüklenebilir (Draggable) hale getirmek ve konumunu korumak
+- [ ] Zil sesini güçlü, en az 15 saniye süren zırıltılı bir alarm döngüsüne dönüştürmek
+- [ ] Pişirme modundaki çalışmayan "Sesli Kontrol Aktif" yazısını ve özelliğini kaldırmak
+- [ ] "Tarifi paylaş" butonunun ana menüye dönme hatasını düzeltmek
+- [ ] Alışveriş listesine el ile madde eklerken miktar (adet/gram) alanı eklemek
+- [ ] Fotoğraftan tarif aktarma ekranına kamera ile fotoğraf çekme ve OCR akışını eklemek
+
+- [ ] Takvim sekmesini alt menüye eklemek ve haftalık menü (sabah, öğle, akşam + en fazla iki saatli ara öğün, malzeme birleştirme) akışını görünür şekilde tamamlamak
+
+- [ ] Google Takvim entegrasyonunu araştırmak: haftalık yemek planını kullanıcının seçtiği Google Takvim'e etkinlik olarak aktarabilmek; uygulama içi Takvim ekranından ayrı kapsam olarak tasarlamak
+- [ ] Google Takvim bağlantısı için OAuth izinleri, yönlendirme adresleri ve güvenli token saklama akışını hazırlamak; kullanıcı onayı olmadan hesap erişimi başlatmamak
