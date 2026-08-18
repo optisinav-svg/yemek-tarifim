@@ -35,18 +35,21 @@ export default function MealPlanScreen() {
     Alert.alert(
       "Yemek Planla",
       `${selectedDay} günü için bir tarif seçin:`,
-      recipes.map((r) => ({
-        text: r.title,
-        onPress: () => {
-          setPlan((prev) => ({
-            ...prev,
-            [selectedDay]: {
-              ...(prev[selectedDay] || {}),
-              [mealKey]: r.title,
-            },
-          }));
-        },
-      })).concat([{ text: "İptal", style: "cancel" }])
+      [
+        ...recipes.map((r) => ({
+          text: r.title,
+          onPress: () => {
+            setPlan((prev) => ({
+              ...prev,
+              [selectedDay]: {
+                ...(prev[selectedDay] || {}),
+                [mealKey]: r.title,
+              },
+            }));
+          },
+        })),
+        { text: "İptal", onPress: () => {} },
+      ]
     );
   };
 
