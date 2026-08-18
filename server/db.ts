@@ -18,7 +18,8 @@ export async function getDb() {
         "ALTER TABLE users ADD COLUMN emailVerified BOOLEAN DEFAULT 0 NOT NULL",
         "ALTER TABLE users ADD COLUMN emailVerifyCode VARCHAR(12)",
         "ALTER TABLE users ADD COLUMN passwordResetToken VARCHAR(120)",
-        "ALTER TABLE users ADD COLUMN passwordResetExpires TIMESTAMP"
+        "ALTER TABLE users ADD COLUMN passwordResetExpires TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN accountStatus VARCHAR(50) DEFAULT 'active'"
       ];
       for (const alt of alterations) {
         try {
