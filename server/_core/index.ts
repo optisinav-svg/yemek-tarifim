@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import fs from "fs";
 import path from "path";
 import { createServer } from "http";
 import net from "net";
@@ -74,17 +75,39 @@ async function startServer() {
   // Render runs this process as the public web service. Serve the Expo web
   // export from the same origin so the browser can load GET / and API calls
   // can remain relative to https://gastronotlar.com.
-  const webDistPath = path.join(process.cwd(), "dist", "web");
-  app.use(express.static(webDistPath, { index: "index.html" }));
+  const primaryDist = path.resolve(process.cwd(), "dist", "web");
+  const secondaryDist = path.resolve(__dirname, "../../dist", "web");
+  const fallbackDist = path.resolve(process.cwd(), "dist");
+  
+  const resolvedDist = fs.existsSync(primaryDist)
+    ? primaryDist
+    : (fs.existsSync(secondaryDist) ? secondaryDist : fallbackDist);
+
+  console.log(`[Static] Using web distribution path: ${resolvedDist} (cwd: ${process.cwd()}, __dirname: ${__dirname})`);
+
+  if (fs.existsSync(resolvedDist)) {
+    app.use(express.static(resolvedDist));
+  } else {
+    console.log(`[Static] Warning: dist/web path not found at startup, static files may fail.`);
+  }
+
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api/")) {
       next();
       return;
     }
 
-    res.sendFile(path.join(webDistPath, "index.html"), (error) => {
-      if (error) next(error);
-    });
+    const currentDist = fs.existsSync(primaryDist)
+      ? primaryDist
+      : (fs.existsSync(secondaryDist) ? secondaryDist : fallbackDist);
+
+    const indexPath = path.join(currentDist, "index.html");
+
+    if (fs.existsSync(indexPath)) {
+      res.sendFile(indexPath);
+    } else {
+      res.status(200).send(`<html><body><h1>Gastronotlar Web</h1><p>Uygulama inşa ediliyor veya index.html bulunamadı (Aranan yol: ${indexPath}). Lütfen Render build komutunu kontrol edin.</p></body></html>`);
+    }
   });
 
   const preferredPort = parseInt(process.env.PORT || "3000");
