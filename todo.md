@@ -243,3 +243,7 @@
 - [ ] 1. Aşama: Gastronotlar web sürümünü yayınlamaya hazır hale getirmek, Resend e-posta doğrulaması ve Cloudflare DNS yönlendirmesini tamamlamak
 - [ ] 2. Aşama: Google Play Store için uygulama paketini (AAB/APK) hazırlamak ve mağaza gereksinimlerini kontrol etmek
 - [ ] 3. Aşama: iOS (App Store) için build altyapısını ve testflight hazırlıklarını tamamlamak
+
+- [ ] Expo Go 502 port hatasını gidermek için geliştirme sunucusunu yeniden başlat ve yeni QR bağlantısı üret
+
+- [ ] Expo Go önizlemesini ertele, gastronotlar.com web sürümü ve e-posta doğrulama akışına tam odaklan
