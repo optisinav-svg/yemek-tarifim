@@ -1,5 +1,6 @@
 import "dotenv/config";
 import express from "express";
+import path from "path";
 import { createServer } from "http";
 import net from "net";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
@@ -69,6 +70,22 @@ async function startServer() {
       createContext,
     }),
   );
+
+  // Render runs this process as the public web service. Serve the Expo web
+  // export from the same origin so the browser can load GET / and API calls
+  // can remain relative to https://gastronotlar.com.
+  const webDistPath = path.join(process.cwd(), "dist", "web");
+  app.use(express.static(webDistPath, { index: "index.html" }));
+  app.get("*", (req, res, next) => {
+    if (req.path.startsWith("/api/")) {
+      next();
+      return;
+    }
+
+    res.sendFile(path.join(webDistPath, "index.html"), (error) => {
+      if (error) next(error);
+    });
+  });
 
   const preferredPort = parseInt(process.env.PORT || "3000");
   const port = await findAvailablePort(preferredPort);

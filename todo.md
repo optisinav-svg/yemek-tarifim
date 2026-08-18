@@ -247,3 +247,16 @@
 - [ ] Expo Go 502 port hatasını gidermek için geliştirme sunucusunu yeniden başlat ve yeni QR bağlantısı üret
 
 - [ ] Expo Go önizlemesini ertele, gastronotlar.com web sürümü ve e-posta doğrulama akışına tam odaklan
+
+
+## Web üretim sunucusu ve GET / düzeltmesi (18 Ağustos 2026)
+
+- [x] Render servisinde `GET /` isteğinin neden uygulama HTML’i döndürmediğini denetle.
+- [x] Expo web üretim çıktısının Render üretim sunucusundan doğru klasörden sunulmasını sağla.
+- [x] Render’ın `PORT` değişkeniyle çalışan üretim başlangıç komutunu doğrula.
+- [ ] SPA yolları, ana sayfa ve API başlangıç akışını üretimde test et.
+- [ ] `https://gastronotlar.com` ve `https://www.gastronotlar.com` adreslerini bağımsız olarak doğrula.
+- [ ] Web açılışı doğrulanmadan Google Play ve iOS mağaza hazırlığına geçme.
+- [ ] Kullanıcıya yalnızca tek işlem ver; kullanıcı sonucu bildirmeden sonraki işlemi isteme.
+
+> Not: Alan adı ve SSL doğrulandı; ancak `GET /` hatası nedeniyle web yayını henüz tamamlandı kabul edilmeyecek.
