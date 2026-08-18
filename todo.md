@@ -247,6 +247,7 @@
 - [ ] Expo Go 502 port hatasını gidermek için geliştirme sunucusunu yeniden başlat ve yeni QR bağlantısı üret
 
 - [ ] Expo Go önizlemesini ertele, gastronotlar.com web sürümü ve e-posta doğrulama akışına tam odaklan
+- [ ] Canlı Render veritabanı kayıt ve şema hatasını kesin olarak teşhis etmek ve çözmek
 
 
 ## Web üretim sunucusu ve GET / düzeltmesi (18 Ağustos 2026)
