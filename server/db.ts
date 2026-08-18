@@ -10,6 +10,23 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
       _db = drizzle(process.env.DATABASE_URL);
+      // Otomatik sütun eksikliklerini gider (Render üretim veritabanı senkronizasyonu için)
+      const alterations = [
+        "ALTER TABLE users ADD COLUMN surname TEXT",
+        "ALTER TABLE users ADD COLUMN username VARCHAR(100)",
+        "ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN emailVerified BOOLEAN DEFAULT 0 NOT NULL",
+        "ALTER TABLE users ADD COLUMN emailVerifyCode VARCHAR(12)",
+        "ALTER TABLE users ADD COLUMN passwordResetToken VARCHAR(120)",
+        "ALTER TABLE users ADD COLUMN passwordResetExpires TIMESTAMP"
+      ];
+      for (const alt of alterations) {
+        try {
+          await (_db as any).execute(alt);
+        } catch (e) {
+          // Zaten varsa yoksay
+        }
+      }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
