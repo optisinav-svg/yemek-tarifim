@@ -293,3 +293,5 @@
 - [ ] Giriş ekranında e-posta dolu, şifre maskeli ve “Beni Hatırla” seçili varsayılan durumunu oluştur; başarılı girişten sonra uygulamayı aç
 - [ ] Giriş ekranındaki “Şifremi Unuttum” gerçek sıfırlama e-postası göndermeli
 - [ ] Resend veya eşdeğer e-posta sağlayıcısını bağlamadan gerçek e-posta gönderimi tamamlandı sayma
+
+- [ ] Kayıt formundaki SQL tablosu ve kolon adı uyumsuzluğunu Drizzle şeması ile eşitleyip kalıcı olarak çözmek
