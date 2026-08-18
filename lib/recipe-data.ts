@@ -40,14 +40,16 @@ export const countries = [
   { code: "ALL" as CountryCode, name: "Tümü", flag: "🌍", subtitle: "Dünya mutfakları" },
 ];
 
-export const categories = [
-  { name: "Çorbalar", icon: "soup-kitchen", count: 1, color: "#E98B3A" },
-  { name: "Ana Yemek", icon: "restaurant", count: 1, color: "#5C8D62" },
-  { name: "Salatalar", icon: "eco", count: 1, color: "#7B9F5B" },
-  { name: "Tatlılar", icon: "cake", count: 0, color: "#C56B7A" },
-  { name: "Hamur İşi", icon: "bakery-dining", count: 0, color: "#B87941" },
-  { name: "İçecekler", icon: "local-cafe", count: 0, color: "#7A6AA8" },
+export const baseCategories = [
+  { name: "Çorbalar", icon: "soup-kitchen", color: "#E98B3A" },
+  { name: "Ana Yemek", icon: "restaurant", color: "#5C8D62" },
+  { name: "Salatalar", icon: "eco", color: "#7B9F5B" },
+  { name: "Tatlılar", icon: "cake", color: "#C56B7A" },
+  { name: "Hamur İşi", icon: "bakery-dining", color: "#B87941" },
+  { name: "İçecekler", icon: "local-cafe", color: "#7A6AA8" },
 ];
+
+// getCategories moved below recipes
 
 export const recipes: Recipe[] = [
   {
@@ -164,3 +166,12 @@ export function formatTotalTime(recipe: Recipe) {
 export function getCategoryCount(categoryName: string, country: CountryCode = "ALL") {
   return getRecipes(country, categoryName).length;
 }
+
+export function getCategories(selectedCountry: CountryCode = "TR") {
+  return baseCategories.map((cat) => {
+    const count = recipes.filter((r) => r.category === cat.name && (selectedCountry === "ALL" || r.country === selectedCountry)).length;
+    return { ...cat, count };
+  });
+}
+
+export const categories = getCategories("TR");

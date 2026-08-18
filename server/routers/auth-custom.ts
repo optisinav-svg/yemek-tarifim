@@ -23,28 +23,30 @@ export const authCustomRouter = router({
 
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         
+        try {
         const existing = await db.select().from(users).where(eq(users.email, input.email)).limit(1);
-      
-      if (existing.length > 0) {
-        // Güncelle
-        await db.update(users).set({
-          name: input.name,
-          surname: input.surname,
-          emailVerifyCode: code,
-          emailVerified: false,
-        }).where(eq(users.email, input.email));
-      } else {
-        // Yeni kullanıcı taslağı oluştur
-        const openId = `user_${crypto.randomBytes(8).toString("hex")}`;
-        await db.insert(users).values({
-          openId,
-          name: input.name,
-          surname: input.surname,
-          email: input.email,
-          emailVerifyCode: code,
-          emailVerified: false,
-          loginMethod: "email",
-        });
+        if (existing.length > 0) {
+          await db.update(users).set({
+            name: input.name,
+            surname: input.surname,
+            emailVerifyCode: code,
+            emailVerified: false,
+          }).where(eq(users.email, input.email));
+        } else {
+          const openId = `user_${crypto.randomBytes(8).toString("hex")}`;
+          await db.insert(users).values({
+            openId,
+            name: input.name,
+            surname: input.surname,
+            email: input.email,
+            emailVerifyCode: code,
+            emailVerified: false,
+            loginMethod: "email",
+          });
+        }
+      } catch (dbErr: any) {
+        console.error("[Auth DB Error]", dbErr);
+        throw new Error("Veritabanı kayıt hatası: " + (dbErr?.message || dbErr));
       }
 
       const html = `

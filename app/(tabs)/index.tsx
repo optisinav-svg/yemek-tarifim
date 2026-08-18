@@ -5,7 +5,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
-import { categories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
+import { categories, getCategories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
 
 function Header({ onProfile, onSearch }: { onProfile: () => void; onSearch: () => void }) {
@@ -76,7 +76,7 @@ function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCoun
       <FlatList
         horizontal
         showsHorizontalScrollIndicator={false}
-        data={categories}
+        data={getCategories(selectedCountry)}
         keyExtractor={(item) => item.name}
         contentContainerStyle={styles.categoryList}
         renderItem={({ item }) => {
