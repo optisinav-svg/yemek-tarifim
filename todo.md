@@ -296,3 +296,4 @@
 - [ ] Resend veya eşdeğer e-posta sağlayıcısını bağlamadan gerçek e-posta gönderimi tamamlandı sayma
 
 - [ ] Kayıt formundaki SQL tablosu ve kolon adı uyumsuzluğunu Drizzle şeması ile eşitleyip kalıcı olarak çözmek
+- [ ] Canlı Render kayıt SQL hatasını (Failed query) kesin olarak gidermek ve gastronotlar.com üzerinde bizzat test etmek
