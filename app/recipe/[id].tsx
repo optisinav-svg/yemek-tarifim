@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
+import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Share } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -304,7 +304,22 @@ export default function RecipeDetailScreen() {
           )}
 
           <Pressable onPress={() => router.push({ pathname: "/cooking/[id]", params: { id: recipe.id } })} style={[styles.cookButton, { backgroundColor: colors.foreground }]}><IconSymbol name="play" size={19} color={colors.background} /><Text style={[styles.cookButtonText, { color: colors.background }]}>Pişirme modunu aç</Text></Pressable>
-          <Pressable onPress={() => router.push("/search")} style={[styles.shareButton, { borderColor: colors.border }]}><IconSymbol name="share" size={18} color={colors.foreground} /><Text style={[styles.shareText, { color: colors.foreground }]}>Tarifi paylaş</Text></Pressable>
+          <Pressable
+            onPress={async () => {
+              try {
+                await Share.share({
+                  title: recipe.title,
+                  message: `${recipe.title} - Gastronotlar Lezzet Rehberi\n\n${recipe.summary}\n\nHazırlık: ${recipe.prepMinutes} dk | Pişirme: ${recipe.cookMinutes} dk`,
+                });
+              } catch (error: any) {
+                Alert.alert("Paylaşılamadı", error?.message || "Tarif paylaşılırken bir hata oluştu.");
+              }
+            }}
+            style={[styles.shareButton, { borderColor: colors.border }]}
+          >
+            <IconSymbol name="share" size={18} color={colors.foreground} />
+            <Text style={[styles.shareText, { color: colors.foreground }]}>Tarifi paylaş</Text>
+          </Pressable>
         </View>
       </ScrollView>
     </ScreenContainer>

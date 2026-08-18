@@ -5,7 +5,7 @@ import { RecipeCard } from "@/components/recipe-card";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
-import { categories, countries, getRecipes, type Recipe } from "@/lib/recipe-data";
+import { categories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
 
 function Header({ onProfile, onSearch }: { onProfile: () => void; onSearch: () => void }) {
@@ -111,7 +111,7 @@ export default function HomeScreen() {
         <View style={[styles.searchShortcut, { backgroundColor: colors.background }]}><Text style={[styles.searchShortcutText, { color: colors.muted }]}>⌘ K</Text></View>
       </Pressable>
       <CountrySelector />
-      <CategoryStrip onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} onSeeAll={() => router.push("/groups")} />
+      <CategoryStrip selectedCountry={selectedCountry} onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} onSeeAll={() => router.push("/groups")} />
       <View style={styles.latestHeading}>
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Yeni eklenenler</Text>
