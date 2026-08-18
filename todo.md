@@ -284,3 +284,5 @@
 - [x] WEB SONRASI — Expo Go uyumluluğu: `expo-notifications` uzak bildirim modülünü Expo Go’da koşulsuz içe aktarmayı kaldır; konsoldaki uyarıyı temizle; gerçek uzak bildirim gereksinimini development build notu olarak koru
 
 - [x] Render deploy hatası teşhisi: `react-native-css-interop/.cache/web.css` dosyası build sırasında SHA-1 okuma hatasına yol açıyor. Build betiğinde `npx expo export --platform web` adımının eksik olması veya node_modules önbelleğinin sızması düzeltilecek.
+
+- [ ] Kullanıcı kayıt ve giriş ekranını istenen alanlarla (e-posta, ad, soyad, kullanıcı adı, şifre, beni hatırla, maskeli şifre, şifremi unuttum ve e-posta doğrulama) güncellemek ve doğrulamak

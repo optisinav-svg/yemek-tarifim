@@ -11,7 +11,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/app-store";
 import { useThemeContext } from "@/lib/theme-provider";
 import { trpc } from "@/lib/trpc";
-import { startOAuthLogin } from "@/constants/oauth";
+import { AuthModal } from "@/components/auth-modal";
 
 export default function ProfileScreen() {
   const colors = useColors();
@@ -20,6 +20,7 @@ export default function ProfileScreen() {
   const { savedRecipeIds } = useAppStore();
   const { user, isAuthenticated, loading, logout, refresh } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
+  const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [name, setName] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
@@ -124,7 +125,7 @@ export default function ProfileScreen() {
         <Pressable
           onPress={() => {
             if (!isAuthenticated) {
-              void startOAuthLogin();
+              setIsAuthModalVisible(true);
             } else {
               setName(user?.name ?? "");
               setAvatarUrl(user?.imageUrl ?? "");
@@ -233,6 +234,15 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <AuthModal
+        visible={isAuthModalVisible}
+        onClose={() => setIsAuthModalVisible(false)}
+        onSuccess={(userData) => {
+          setIsAuthModalVisible(false);
+          Alert.alert("Hoş Geldiniz", `${userData.name} (${userData.email}) olarak giriş yaptınız.`);
+        }}
+      />
     </ScreenContainer>
   );
 }
