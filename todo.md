@@ -219,3 +219,27 @@
 - [x] Tüm yazı yazılacak ekranlarda sesle yazma simgesi ve gerçek dikte/sesli metin girişi
 - [x] Alt menüye (Ana Sayfa, Ara, Listem, Market, Zamanlayıcı, Takvim) Takvim sekmesinin eklenmesi
 - [x] Eller serbest pişirme modunda sesli komutlarla (ileri, geri, dur, başlat) adım ilerletme
+
+- [ ] Gastronot.com, gastronot.com.tr alan adları ve mobil mağazalardaki varlık durumunu doğrula
+
+- [ ] Gastronotlar.com için en hesaplı kayıt kuruluşu fiyat karşılaştırmasını tamamla
+
+- [ ] Turhost ve Cloudflare güvenlik/kullanılabilirlik karşılaştırmasını tamamla
+
+- [ ] Alan adı sağlayıcısı ile uzun vadeli iletişim ve Cloudflare/Turhost tercihini netleştir
+
+- [ ] Cloudflare üzerinden gastronotlar.com satın alma adım adım yönlendirmesini başlat
+
+## Gastronotlar.com ve E-posta Doğrulama Adımları
+
+- [x] Cloudflare üzerinden gastronotlar.com alan adını aktif olarak tescil etmek
+- [ ] Resend üzerinden alan adı doğrulama (DKIM/SPF) kayıtlarını hazırlamak
+- [ ] Kullanıcıya Resend hesabı açma ve API anahtarını ekleme adımlarını tarif etmek
+- [ ] Kullanıcıya Cloudflare DNS ekranına eklenecek TXT/CNAME kayıtlarını tek tek tarif etmek
+- [ ] Sunucu tarafında e-posta doğrulama, yeniden gönderme ve şifre sıfırlama kodunu tamamlayıp test etmek
+
+## Sıralı Yayın Planı (Web -> Google Play -> iOS)
+
+- [ ] 1. Aşama: Gastronotlar web sürümünü yayınlamaya hazır hale getirmek, Resend e-posta doğrulaması ve Cloudflare DNS yönlendirmesini tamamlamak
+- [ ] 2. Aşama: Google Play Store için uygulama paketini (AAB/APK) hazırlamak ve mağaza gereksinimlerini kontrol etmek
+- [ ] 3. Aşama: iOS (App Store) için build altyapısını ve testflight hazırlıklarını tamamlamak
