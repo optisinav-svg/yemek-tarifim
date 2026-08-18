@@ -16,10 +16,10 @@ const DAYS = [
 ];
 
 const MEALS = [
-  { key: "breakfast", label: "Kahvaltı", icon: "local-cafe" },
+  { key: "breakfast", label: "Kahvaltı", icon: "restaurant" },
   { key: "lunch", label: "Öğle Yemeği", icon: "restaurant" },
-  { key: "dinner", label: "Akşam Yemeği", icon: "dinner-dining" },
-  { key: "snack", label: "Ara Öğün", icon: "cookie" },
+  { key: "dinner", label: "Akşam Yemeği", icon: "restaurant" },
+  { key: "snack", label: "Ara Öğün", icon: "star" },
 ];
 
 export default function MealPlanScreen() {
