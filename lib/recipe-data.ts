@@ -41,9 +41,9 @@ export const countries = [
 ];
 
 export const categories = [
-  { name: "Çorbalar", icon: "soup-kitchen", count: 2, color: "#E98B3A" },
+  { name: "Çorbalar", icon: "soup-kitchen", count: 1, color: "#E98B3A" },
   { name: "Ana Yemek", icon: "restaurant", count: 1, color: "#5C8D62" },
-  { name: "Salatalar", icon: "eco", count: 0, color: "#7B9F5B" },
+  { name: "Salatalar", icon: "eco", count: 1, color: "#7B9F5B" },
   { name: "Tatlılar", icon: "cake", count: 0, color: "#C56B7A" },
   { name: "Hamur İşi", icon: "bakery-dining", count: 0, color: "#B87941" },
   { name: "İçecekler", icon: "local-cafe", count: 0, color: "#7A6AA8" },
