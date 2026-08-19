@@ -16,9 +16,15 @@ export async function getDb() {
         // Eğer dış Render URL (.render.com) değilse SSL ayarını tamamen kapatıyoruz.
         const isExternal = dbUrl.includes(".render.com") || dbUrl.includes("sslmode=");
         
+        // Render PostgreSQL bağlantılarında Node.js pg havuzunun sertifika doğrulaması 
+        // nedeniyle "There was an error establishing an SSL connection" hatası vermesini 
+        // önlemek için ssl parametresini hem internal hem external adresler için güvenli 
+        // biçimde rejectUnauthorized: false ile yapılandırıyoruz.
         _pool = new Pool({
           connectionString: dbUrl,
-          ssl: isExternal ? { rejectUnauthorized: false } : false,
+          ssl: {
+            rejectUnauthorized: false,
+          },
           connectionTimeoutMillis: 20000,
           idleTimeoutMillis: 30000,
         });
