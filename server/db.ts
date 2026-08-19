@@ -14,8 +14,9 @@ export async function getDb() {
       const isProduction = process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("render.com") || process.env.DATABASE_URL?.includes("dpg-");
       _pool = new Pool({
         connectionString: process.env.DATABASE_URL,
-        ssl: isProduction ? { rejectUnauthorized: false } : false,
-        connectionTimeoutMillis: 10000,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 15000,
+        idleTimeoutMillis: 30000,
       });
       await _pool.query("SELECT 1");
       _db = drizzle(_pool);
@@ -38,10 +39,11 @@ export async function getDb() {
         }
       }
     } catch (error) {
-      console.warn("[Database] Failed to connect:", error);
+      console.error("[Database] Failed to connect:", error);
       _db = null;
       await _pool?.end().catch(() => undefined);
       _pool = null;
+      throw new Error("Veritabanı bağlantısı kurulamadı: " + (error instanceof Error ? error.message : String(error)));
     }
   }
   return _db;
