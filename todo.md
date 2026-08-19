@@ -309,3 +309,7 @@
 
 - [ ] Canlı web kayıt düğmesinin API isteğinin Render loglarında görünmemesi sorununu istemci API adresi ve tRPC yapılandırmasıyla teşhis etmek
 - [ ] Canlı web istemcisi ile `/api/trpc` arasındaki kayıt isteğini uçtan uca doğrulamak
+
+- [ ] Son canlı testte doğrulama e-postasının ulaşmaması ve kayıt sonrası kod ekranının açılmaması sorununu yeniden teşhis etmek
+- [ ] PostgreSQL kayıt prosedürünün gerçek canlı şemayla çalıştığını doğrulamak
+- [ ] Web kayıt formunda tRPC başarı/hata yanıtını görünür kullanıcı mesajına dönüştürmek

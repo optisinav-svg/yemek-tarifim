@@ -1,4 +1,4 @@
-import { pgTable, serial, varchar, text, boolean, timestamp, integer, index, uniqueIndex, pgEnum } from "drizzle-orm/pg-core";
+import { pgTable, serial, varchar, text, integer, boolean, timestamp, uniqueIndex, index, pgEnum } from "drizzle-orm/pg-core";
 
 export const roleEnum = pgEnum("role", ["user", "admin"]);
 export const accountStatusEnum = pgEnum("accountStatus", ["active", "suspended", "deleted"]);
@@ -126,10 +126,10 @@ export type InsertRecipeAttempt = typeof recipeAttempts.$inferInsert;
 export const savedRecipes = pgTable("saved_recipes", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
-  recipeId: integer("recipeId").notNull(),
+  recipeKey: varchar("recipeKey", { length: 120 }).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  userRecipeUnique: uniqueIndex("saved_recipes_user_recipe_idx").on(table.userId, table.recipeId),
+  userRecipeIdx: uniqueIndex("saved_recipes_user_recipe_idx").on(table.userId, table.recipeKey),
   userIdx: index("saved_recipes_user_idx").on(table.userId),
 }));
 
@@ -139,48 +139,58 @@ export type InsertSavedRecipe = typeof savedRecipes.$inferInsert;
 export const shoppingItems = pgTable("shopping_items", {
   id: serial("id").primaryKey(),
   userId: integer("userId").notNull(),
-  recipeId: integer("recipeId"),
-  name: varchar("name", { length: 180 }).notNull(),
-  amount: varchar("amount", { length: 60 }),
-  completed: boolean("completed").default(false).notNull(),
+  itemKey: varchar("itemKey", { length: 160 }).notNull(),
+  name: varchar("name", { length: 160 }).notNull(),
+  amount: varchar("amount", { length: 80 }).notNull(),
+  checked: boolean("checked").default(false).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 }, (table) => ({
+  userItemIdx: uniqueIndex("shopping_items_user_item_idx").on(table.userId, table.itemKey),
   userIdx: index("shopping_items_user_idx").on(table.userId),
 }));
 
 export type ShoppingItem = typeof shoppingItems.$inferSelect;
 export type InsertShoppingItem = typeof shoppingItems.$inferInsert;
 
+export const rateLimitBuckets = pgTable("rate_limit_buckets", {
+  id: serial("id").primaryKey(),
+  bucketKey: varchar("bucketKey", { length: 220 }).notNull().unique(),
+  count: integer("count").default(0).notNull(),
+  resetAt: timestamp("resetAt").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
 export const auditLogs = pgTable("audit_logs", {
   id: serial("id").primaryKey(),
-  userId: integer("userId"),
-  action: varchar("action", { length: 120 }).notNull(),
-  details: text("details"),
+  actorId: integer("actorId"),
+  action: varchar("action", { length: 100 }).notNull(),
+  entityType: varchar("entityType", { length: 60 }).notNull(),
+  entityId: varchar("entityId", { length: 120 }),
+  metadataJson: text("metadataJson"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  userCreatedIdx: index("audit_logs_user_created_idx").on(table.userId, table.createdAt),
+  actorIdx: index("audit_logs_actor_idx").on(table.actorId, table.createdAt),
+  entityIdx: index("audit_logs_entity_idx").on(table.entityType, table.entityId, table.createdAt),
 }));
-
-export type AuditLog = typeof auditLogs.$inferSelect;
 
 export const contentReports = pgTable("content_reports", {
   id: serial("id").primaryKey(),
   reporterId: integer("reporterId").notNull(),
-  contentType: varchar("contentType", { length: 60 }).notNull(),
-  contentId: integer("contentId").notNull(),
-  reason: varchar("reason", { length: 300 }).notNull(),
-  status: varchar("status", { length: 50 }).default("pending").now?.() ? "pending" : "pending",
+  targetType: varchar("targetType", { length: 60 }).notNull(),
+  targetId: integer("targetId").notNull(),
+  reason: varchar("reason", { length: 80 }).notNull(),
+  details: varchar("details", { length: 800 }),
+  status: varchar("status", { length: 50 }).default("pending").notNull(),
+  reviewedBy: integer("reviewedBy"),
+  reviewedAt: timestamp("reviewedAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
-  statusCreatedIdx: index("content_reports_status_created_idx").on(table.status, table.createdAt),
+  statusIdx: index("content_reports_status_idx").on(table.status, table.createdAt),
+  targetIdx: index("content_reports_target_idx").on(table.targetType, table.targetId),
 }));
 
+export type RateLimitBucket = typeof rateLimitBuckets.$inferSelect;
+export type AuditLog = typeof auditLogs.$inferSelect;
 export type ContentReport = typeof contentReports.$inferSelect;
 export type InsertContentReport = typeof contentReports.$inferInsert;
-
-export const rateLimitBuckets = pgTable("rate_limit_buckets", {
-  id: serial("id").primaryCode ? "id" : "id",
-  key: varchar("key", { length: 120 }).notNull().unique(),
-  count: integer("count").notNull(),
-  expiresAt: timestamp("expiresAt").notNull(),
-});
