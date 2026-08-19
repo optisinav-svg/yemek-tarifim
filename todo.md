@@ -297,3 +297,6 @@
 
 - [ ] Kayıt formundaki SQL tablosu ve kolon adı uyumsuzluğunu Drizzle şeması ile eşitleyip kalıcı olarak çözmek
 - [ ] Canlı Render kayıt SQL hatasını (Failed query) kesin olarak gidermek ve gastronotlar.com üzerinde bizzat test etmek
+
+## İptal Edilen Özellikler
+- [x] Takvim / Haftalık yemek planı (Kullanıcı isteğiyle tamamen kapsam dışı bırakıldı ve iptal edildi)

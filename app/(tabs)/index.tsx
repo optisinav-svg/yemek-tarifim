@@ -80,14 +80,13 @@ function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCoun
         keyExtractor={(item) => item.name}
         contentContainerStyle={styles.categoryList}
         renderItem={({ item }) => {
-          const dynamicCount = getCategoryCount(item.name, selectedCountry);
           return (
             <Pressable onPress={() => onCategory(item.name)} style={[styles.categoryPill, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               <View style={[styles.categoryIcon, { backgroundColor: item.color }]}>
                 <IconSymbol name={item.icon as never} size={19} color="#FFFFFF" />
               </View>
               <Text style={[styles.categoryName, { color: colors.foreground }]}>{item.name}</Text>
-              <Text style={[styles.categoryCount, { color: colors.muted }]}>{dynamicCount} tarif</Text>
+              <Text style={[styles.categoryCount, { color: colors.muted }]}>{item.count} tarif</Text>
             </Pressable>
           );
         }}
