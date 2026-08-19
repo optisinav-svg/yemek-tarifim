@@ -23,7 +23,7 @@ export const systemRouter = router({
           dbStatus.userCount = rows.length;
         }
       } catch (err: any) {
-        dbStatus.error = err?.message || String(err);
+        dbStatus.error = `Code: ${err?.code || 'UNKNOWN'} | Msg: ${err?.message || String(err)} | Detail: ${err?.detail || ''}`;
       }
       return {
         ok: true,
