@@ -19,6 +19,7 @@ export const systemRouter = router({
           dbConnected: true,
           dbTime: res.rows[0]?.now,
           dbVersion: res.rows[0]?.version,
+          buildTag: "GASTRONOTLAR_BUILD_V99_LIVE",
         };
       } catch (err: any) {
         return {
