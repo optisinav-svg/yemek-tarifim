@@ -351,3 +351,5 @@
 - [ ] Web kayıt formunda "Kod gönder" tıklandığında konsol/sunucu tarafında oluşan hatayı incele
 - [ ] Telefon QR uygulamasında alınan "Veritabanı bağlantısı kurulamadı" hatasının kaynaklandığı tRPC mutation endpoint'ini kontrol et
 - [ ] Render üzerindeki `DATABASE_URL` ortam değişkeninin doğru aktarıldığını ve havuzun ilk bağlantıda düşmediğini doğrula
+
+- [ ] Market (Alışveriş listesi / market) sekmesine misafirler için giriş/üyelik kapısı ekle
