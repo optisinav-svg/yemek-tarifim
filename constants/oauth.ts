@@ -25,28 +25,40 @@ export const OWNER_NAME = env.ownerName;
 export const API_BASE_URL = env.apiBaseUrl;
 
 /**
- * Get the API base URL, deriving from current hostname if not set.
- * Metro runs on 8081, API server runs on 3000.
- * URL pattern: https://PORT-sandboxid.region.domain
+ * Resolve the API origin for both the local Expo preview and production.
+ *
+ * The deployed web bundle and native clients do not have the sandbox's
+ * `8081 -> 3000` hostname mapping. If no explicit build-time URL exists,
+ * they must use the same production origin as the web app.
  */
 export function getApiBaseUrl(): string {
-  // If API_BASE_URL is set, use it
   if (API_BASE_URL) {
     return API_BASE_URL.replace(/\/$/, "");
   }
 
-  // On web, derive from current hostname by replacing port 8081 with 3000
   if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
-    const { protocol, hostname } = window.location;
-    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
+    const { protocol, hostname, origin } = window.location;
     const apiHostname = hostname.replace(/^8081-/, "3000-");
+
+    // Local Manus preview: the API is exposed on the matching 3000 host.
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
     }
+
+    // Local development outside the Manus preview.
+    if (hostname === "localhost" || hostname === "127.0.0.1") {
+      return `${origin}:3000`;
+    }
+
+    // The public web app serves its API from the same origin.
+    if (hostname === "gastronotlar.com" || hostname === "www.gastronotlar.com") {
+      return origin.replace(/\/$/, "");
+    }
   }
 
-  // Fallback to empty (will use relative URL)
-  return "";
+  // Native production builds have no window object. Do not fall back to an
+  // empty URL, which would send requests to the device or an obsolete host.
+  return "https://gastronotlar.com";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";

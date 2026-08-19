@@ -333,3 +333,7 @@
 - [x] Web ve mobil oturum alanlarını özel e-posta oturum tokenı/çereziyle eşleştirmek
 - [x] PostgreSQL bağlantısı erişilemediğinde public keşif sorgularının güvenli boş liste döndürmesini sağlamak
 - [x] Misafir erişimi değişiklikleri için TypeScript, test ve üretim build kontrollerini çalıştırmak
+
+- [ ] system.health bağlıyken auth-custom kayıt yolundaki getDb ve users şema hatasını ayırıp düzeltmek
+- [ ] Web ve mobil kayıt akışında gerçek tRPC hata kodunu doğrulamak
+- [ ] E-posta doğrulama kodunun üretim teslimini tek kontrollü testle doğrulamak
