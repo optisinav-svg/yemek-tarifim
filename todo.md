@@ -333,3 +333,21 @@
 - [x] Web ve mobil oturum alanlarını özel e-posta oturum tokenı/çereziyle eşleştirmek
 - [x] PostgreSQL bağlantısı erişilemediğinde public keşif sorgularının güvenli boş liste döndürmesini sağlamak
 - [x] Misafir erişimi değişiklikleri için TypeScript, test ve üretim build kontrollerini çalıştırmak
+
+## Canlı sürüm doğrulaması — 19.08.2026
+
+- [ ] Canlı gastronotlar.com sürümünün misafir ana sayfasını gösterdiğini doğrula; eski zorunlu giriş ekranı görünüyorsa güncel checkpoint’i yayımla
+- [ ] Canlı telefonda kayıt sırasında görülen “Veritabanı bağlantısı kurulamadı” hatasını, güncel Render deploy ve DATABASE_URL ile uçtan uca doğrula
+- [ ] Güncel sürüm yayımlandıktan sonra gizli sekme web ve QR telefon akışlarını ayrı ayrı yeniden test et
+
+## Render İki Gastronotlar Servisi İncelemesi — 19.08.2026
+
+- [ ] Render panelindeki iki Gastronotlar servisini birbiriyle karşılaştır (biri `srv-da23dem1egvs7398g8vg` ID'li aktif servis, diğeri muhtemelen eski veya yedek servis)
+- [ ] `gastronotlar.com` alan adının hangi servise bağlı olduğunu doğrula
+- [ ] `optisinav-svg/yemek-tarifim` GitHub reposunun bağlı olduğu doğru serviste Manual Deploy yapıldığından emin ol
+
+## Canlı Kayıt ve Veritabanı Teşhisi — 19.08.2026
+
+- [ ] Web kayıt formunda "Kod gönder" tıklandığında konsol/sunucu tarafında oluşan hatayı incele
+- [ ] Telefon QR uygulamasında alınan "Veritabanı bağlantısı kurulamadı" hatasının kaynaklandığı tRPC mutation endpoint'ini kontrol et
+- [ ] Render üzerindeki `DATABASE_URL` ortam değişkeninin doğru aktarıldığını ve havuzun ilk bağlantıda düşmediğini doğrula
