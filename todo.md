@@ -366,3 +366,5 @@
 - [ ] 7. Kullanıcı tariflerinin herkese görünür listeleme akışı
 
 - [ ] Render PostgreSQL SSL alternatif çözüm araştırması
+
+- [ ] Render PostgreSQL alternatif bağlantı kontrolü

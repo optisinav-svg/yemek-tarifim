@@ -12,16 +12,16 @@ export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
         let dbUrl = process.env.DATABASE_URL || "";
-        if (dbUrl.includes("dpg-") || dbUrl.includes("render.com")) {
-          if (!dbUrl.includes("sslmode=")) {
-            dbUrl += dbUrl.includes("?") ? "&sslmode=require" : "?sslmode=require";
-          }
+        // Render Internal URL'ler (ör. -a ile bitenler) özel SSL sertifikası gerektirmez, plaintext/internal TLS kullanır.
+        // Sadece açıkça harici .render.com domaini varsa sslmode ekle.
+        const isExternalRender = dbUrl.includes(".render.com") || dbUrl.includes("sslmode=");
+        if (isExternalRender && !dbUrl.includes("sslmode=")) {
+          dbUrl += dbUrl.includes("?") ? "&sslmode=require" : "?sslmode=require";
         }
+        
         _pool = new Pool({
           connectionString: dbUrl,
-          ssl: {
-            rejectUnauthorized: false,
-          },
+          ssl: isExternalRender ? { rejectUnauthorized: false } : false,
           connectionTimeoutMillis: 15000,
           idleTimeoutMillis: 30000,
         });
