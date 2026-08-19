@@ -337,3 +337,5 @@
 - [ ] system.health bağlıyken auth-custom kayıt yolundaki getDb ve users şema hatasını ayırıp düzeltmek
 - [ ] Web ve mobil kayıt akışında gerçek tRPC hata kodunu doğrulamak
 - [ ] E-posta doğrulama kodunun üretim teslimini tek kontrollü testle doğrulamak
+
+- [ ] system.health bağlıyken auth-custom getDb ve users şema hatasını kesin olarak çözmek
