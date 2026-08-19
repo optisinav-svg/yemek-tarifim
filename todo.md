@@ -313,3 +313,10 @@
 - [ ] Son canlı testte doğrulama e-postasının ulaşmaması ve kayıt sonrası kod ekranının açılmaması sorununu yeniden teşhis etmek
 - [ ] PostgreSQL kayıt prosedürünün gerçek canlı şemayla çalıştığını doğrulamak
 - [ ] Web kayıt formunda tRPC başarı/hata yanıtını görünür kullanıcı mesajına dönüştürmek
+
+- [ ] Canlı kayıt formunun gerçek API endpointine ulaşıp ulaşmadığını Render loglarıyla doğrulamak
+- [ ] PostgreSQL users şemasını ve kayıt sorgusunu canlı veritabanında doğrulamak
+- [ ] Resend gönderim yanıtını ve gönderen adresini gerçek canlı testle doğrulamak
+- [ ] Web kayıt formunda başarısızlıkta görünür hata, başarıda kod ekranı geçişi sağlamak
+- [ ] Kayıt ve doğrulama akışını canlıda tek kontrollü testle doğrulamak
+- [ ] Canlı e-posta gönderim yanıtını ve Resend teslimatını doğrula
