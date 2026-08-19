@@ -30,22 +30,23 @@ export const API_BASE_URL = env.apiBaseUrl;
  * URL pattern: https://PORT-sandboxid.region.domain
  */
 export function getApiBaseUrl(): string {
-  // If API_BASE_URL is set, use it
+  // Canlı üretim ortamında (mobil dahil) doğrudan gastronotlar.com kullan
+  if (process.env.NODE_ENV === "production" || !__DEV__) {
+    return "https://gastronotlar.com";
+  }
+
   if (API_BASE_URL) {
     return API_BASE_URL.replace(/\/$/, "");
   }
 
-  // On web, derive from current hostname by replacing port 8081 with 3000
   if (ReactNative.Platform.OS === "web" && typeof window !== "undefined" && window.location) {
     const { protocol, hostname } = window.location;
-    // Pattern: 8081-sandboxid.region.domain -> 3000-sandboxid.region.domain
     const apiHostname = hostname.replace(/^8081-/, "3000-");
     if (apiHostname !== hostname) {
       return `${protocol}//${apiHostname}`;
     }
   }
 
-  // Mobil veya üretim ortamında gastronotlar.com tRPC uç noktasına bağlan
   return "https://gastronotlar.com";
 }
 
