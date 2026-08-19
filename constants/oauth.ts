@@ -45,8 +45,8 @@ export function getApiBaseUrl(): string {
     }
   }
 
-  // Fallback to empty (will use relative URL)
-  return "";
+  // Mobil veya üretim ortamında gastronotlar.com tRPC uç noktasına bağlan
+  return "https://gastronotlar.com";
 }
 
 export const SESSION_TOKEN_KEY = "app_session_token";
