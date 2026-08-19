@@ -300,3 +300,12 @@
 
 ## İptal Edilen Özellikler
 - [x] Takvim / Haftalık yemek planı (Kullanıcı isteğiyle tamamen kapsam dışı bırakıldı ve iptal edildi)
+
+- [ ] Canlı kayıt akışında doğrulama e-postasının ulaşmaması sorununu Resend, gönderen adresi, API anahtarı ve sunucu loglarıyla uçtan uca teşhis etmek
+- [ ] Doğrulama kodu e-postasını canlı ortamda gerçek bir kayıtla doğrulamak
+
+- [ ] Resend anahtarı eklendikten sonraki canlı kayıt testinde e-posta ve kullanıcı geri bildirimi sorununu yeniden teşhis etmek
+- [ ] Canlı kayıt isteğinin Render çalışan servisine ulaştığını ve Resend gönderim sonucunu doğrulamak
+
+- [ ] Canlı web kayıt düğmesinin API isteğinin Render loglarında görünmemesi sorununu istemci API adresi ve tRPC yapılandırmasıyla teşhis etmek
+- [ ] Canlı web istemcisi ile `/api/trpc` arasındaki kayıt isteğini uçtan uca doğrulamak

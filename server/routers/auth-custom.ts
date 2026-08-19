@@ -63,9 +63,19 @@ export const authCustomRouter = router({
 
       const emailSent = await sendEmail(input.email, "Gastronotlar - E-posta Doğrulama Kodunuz", html);
       if (!emailSent) {
-        console.warn("[Auth] Email could not be sent via Resend, but code is generated. Code:", code);
+        console.warn("[Auth] Email could not be sent via Resend.");
+        return {
+          success: false,
+          emailSent: false,
+          message: "Doğrulama e-postası gönderilemedi. Resend ayarlarını kontrol edip tekrar deneyin.",
+        };
       }
-      return { success: true, message: emailSent ? "Doğrulama kodu e-postanıza gönderildi." : `Doğrulama kodu gönderilemedi ancak test kodunuz: ${code}` };
+
+      return {
+        success: true,
+        emailSent: true,
+        message: "Doğrulama kodu e-posta adresinize gönderildi.",
+      };
       } catch (error: any) {
         console.error("[Auth] requestVerificationCode error:", error);
         throw new Error("Kayıt hatası: " + (error?.message || error));
