@@ -94,9 +94,13 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
         if (password !== confirmPassword) {
           throw new Error("Şifreler birbiriyle aynı değil.");
         }
-        await setPasswordMutation.mutateAsync({ email: email.trim().toLowerCase(), password, confirmPassword, username: username.trim() });
-        const result = await loginMutation.mutateAsync({ email: email.trim().toLowerCase(), password });
-        await completeSession(result);
+        const regResult = await setPasswordMutation.mutateAsync({ email: email.trim().toLowerCase(), password, confirmPassword, username: username.trim() });
+        if (regResult && "sessionToken" in regResult && regResult.sessionToken) {
+          await completeSession(regResult);
+        } else {
+          const result = await loginMutation.mutateAsync({ email: email.trim().toLowerCase(), password });
+          await completeSession(result);
+        }
         return;
       }
 
@@ -167,7 +171,10 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
                 <Text style={[styles.hint, { color: colors.muted }]}>{email} adresi doğrulandı.</Text>
                 <Label text="Kullanıcı Adı" colors={colors} />
                 <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="kullaniciadi" placeholderTextColor={colors.muted} value={username} onChangeText={setUsername} autoCapitalize="none" />
-                <Label text="Şifre" colors={colors} />
+                <View style={styles.passwordHeader}>
+                  <Label text="Şifre" colors={colors} />
+                  <Pressable onPress={() => setSecurePassword(!securePassword)}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>{securePassword ? "Göster" : "Gizle"}</Text></Pressable>
+                </View>
                 <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="En az 6 karakter" placeholderTextColor={colors.muted} value={password} onChangeText={setPassword} secureTextEntry={securePassword} />
                 <Label text="Şifre Tekrar" colors={colors} />
                 <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="Şifreyi tekrar girin" placeholderTextColor={colors.muted} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={securePassword} />
