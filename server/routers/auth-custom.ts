@@ -76,9 +76,8 @@ export const authCustomRouter = router({
         message: "Doğrulama kodu e-posta adresinize gönderildi.",
       };
       } catch (error: any) {
-        console.error("[Auth] requestVerificationCode error full:", error);
-        const detail = error?.message || error?.toString() || "Bilinmeyen hata";
-        throw new Error("Kayıt hatası: " + detail);
+        console.error("[Auth] requestVerificationCode error:", error);
+        throw new Error("Kayıt hatası: " + (error?.message || error));
       }
     }),
 
