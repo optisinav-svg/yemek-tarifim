@@ -1,10 +1,13 @@
-import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { getDb } from "../db";
 import { users } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { sendEmail } from "../_core/email";
 import crypto from "crypto";
+import { z } from "zod";
+import { sdk } from "../_core/sdk";
+import { getSessionCookieOptions } from "../_core/cookies";
+import { COOKIE_NAME } from "../../shared/const";
 
 export const authCustomRouter = router({
   // 1. Adım: Kullanıcı ad, soyad ve e-posta girer. 6 haneli kod üretilir ve Resend ile gönderilir.
@@ -161,9 +164,26 @@ export const authCustomRouter = router({
         throw new Error("Hatalı şifre.");
       }
 
-      // Cookie / oturum oluşturma mantığı
-      // Burada cookie set edebiliriz veya istemci tarafında state tutabiliriz.
-      return { success: true, user: { id: user.id, email: user.email, name: user.name, surname: user.surname, username: user.username } };
+      const sessionToken = await sdk.createSessionToken(user.openId, { name: user.name ?? user.email ?? "Gastronotlar üyesi" });
+      ctx.res.cookie(COOKIE_NAME, sessionToken, getSessionCookieOptions(ctx.req));
+
+      return {
+        success: true,
+        sessionToken,
+        user: {
+          id: user.id,
+          openId: user.openId,
+          email: user.email,
+          name: user.name,
+          surname: user.surname,
+          username: user.username,
+          imageUrl: user.imageUrl,
+          loginMethod: user.loginMethod,
+          role: user.role,
+          accountStatus: user.accountStatus,
+          lastSignedIn: new Date(),
+        },
+      };
     }),
 
   // Şifremi unuttum

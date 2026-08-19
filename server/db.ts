@@ -1,36 +1,46 @@
-import { drizzle } from "drizzle-orm/mysql2";
+import { drizzle } from "drizzle-orm/node-postgres";
 import { and, desc, eq, like, or } from "drizzle-orm";
+import { Pool } from "pg";
 import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
-let _db: ReturnType<typeof drizzle> | null = null;
+let _db: any = null;
+let _pool: Pool | null = null;
 
-// Lazily create the drizzle instance so local tooling can run without a DB.
+// Lazily create the PostgreSQL pool and Drizzle instance so local tooling can run without a DB.
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      _db = drizzle(process.env.DATABASE_URL);
-      // Otomatik sütun eksikliklerini gider (Render üretim veritabanı senkronizasyonu için)
+      _pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 5000,
+      });
+      await _pool.query("SELECT 1");
+      _db = drizzle(_pool);
+      // Render veritabanında daha önce oluşturulmuş tabloları geriye dönük uyumlu tut.
       const alterations = [
-        "ALTER TABLE users ADD COLUMN surname TEXT",
-        "ALTER TABLE users ADD COLUMN username VARCHAR(100)",
-        "ALTER TABLE users ADD COLUMN passwordHash VARCHAR(255)",
-        "ALTER TABLE users ADD COLUMN emailVerified BOOLEAN DEFAULT 0 NOT NULL",
-        "ALTER TABLE users ADD COLUMN emailVerifyCode VARCHAR(12)",
-        "ALTER TABLE users ADD COLUMN passwordResetToken VARCHAR(120)",
-        "ALTER TABLE users ADD COLUMN passwordResetExpires TIMESTAMP",
-        "ALTER TABLE users ADD COLUMN accountStatus VARCHAR(50) DEFAULT 'active'"
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS surname TEXT",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordHash\" VARCHAR(255)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"emailVerified\" BOOLEAN DEFAULT FALSE NOT NULL",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"emailVerifyCode\" VARCHAR(12)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordResetToken\" VARCHAR(120)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordResetExpires\" TIMESTAMP",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"accountStatus\" VARCHAR(50) DEFAULT 'active'"
       ];
       for (const alt of alterations) {
         try {
-          await (_db as any).execute(alt);
-        } catch (e) {
-          // Zaten varsa yoksay
+          await _pool.query(alt);
+        } catch {
+          // Kolon zaten varsa veya eski tablo yapısı farklıysa sorguyu uygulamayı durdurmasın.
         }
       }
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
+      await _pool?.end().catch(() => undefined);
+      _pool = null;
     }
   }
   return _db;
@@ -60,7 +70,7 @@ export async function upsertUser(user: InsertUser): Promise<void> {
   else if (user.openId === ENV.ownerOpenId) { values.role = "admin"; updateSet.role = "admin"; }
   if (!values.lastSignedIn) values.lastSignedIn = new Date();
   if (Object.keys(updateSet).length === 0) updateSet.lastSignedIn = new Date();
-  await db.insert(users).values(values).onDuplicateKeyUpdate({ set: updateSet });
+  await db.insert(users).values(values).onConflictDoUpdate({ target: users.openId, set: updateSet });
 }
 
 export async function getUserByOpenId(openId: string) {
@@ -142,7 +152,7 @@ export async function deleteAccount(userId: number) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.transaction(async (tx) => {
+  await db.transaction(async (tx: any) => {
     await tx.delete(savedRecipes).where(eq(savedRecipes.userId, userId));
     await tx.delete(shoppingItems).where(eq(shoppingItems.userId, userId));
     await tx.delete(recipeComments).where(eq(recipeComments.authorId, userId));
@@ -159,12 +169,14 @@ export async function deleteAccount(userId: number) {
   });
 }
 
-export async function updateUserProfile(openId: string, data: { name?: string; imageUrl?: string }) {
+export async function updateUserProfile(openId: string, data: { name?: string; surname?: string; imageUrl?: string; passwordHash?: string }) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const updateSet: Record<string, unknown> = {};
   if (data.name !== undefined) updateSet.name = data.name;
+  if (data.surname !== undefined) updateSet.surname = data.surname;
   if (data.imageUrl !== undefined) updateSet.imageUrl = data.imageUrl;
+  if (data.passwordHash !== undefined) updateSet.passwordHash = data.passwordHash;
   if (Object.keys(updateSet).length === 0) return;
   await db.update(users).set(updateSet).where(eq(users.openId, openId));
 }
@@ -288,8 +300,8 @@ export async function getUserSyncState(userId: number) {
   ]);
 
   return {
-    savedRecipeIds: saved.map((item) => item.recipeKey),
-    shoppingItems: shopping.map((item) => ({ id: item.itemKey, name: item.name, amount: item.amount, checked: item.checked })),
+    savedRecipeIds: saved.map((item: { recipeKey: string }) => item.recipeKey),
+    shoppingItems: shopping.map((item: { itemKey: string; name: string; amount: string; checked: boolean }) => ({ itemKey: item.itemKey, name: item.name, amount: item.amount, checked: item.checked })),
   };
 }
 
@@ -303,7 +315,7 @@ export async function replaceUserSyncState(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  await db.transaction(async (tx) => {
+  await db.transaction(async (tx: any) => {
     await tx.delete(savedRecipes).where(eq(savedRecipes.userId, userId));
     await tx.delete(shoppingItems).where(eq(shoppingItems.userId, userId));
 

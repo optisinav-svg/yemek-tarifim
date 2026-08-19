@@ -128,6 +128,8 @@ export async function getMe(): Promise<{
   id: number;
   openId: string;
   name: string | null;
+  surname: string | null;
+  username: string | null;
   email: string | null;
   loginMethod: string | null;
   imageUrl: string | null;

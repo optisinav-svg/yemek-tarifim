@@ -98,7 +98,7 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
     try {
       const remote = await trpcClient.sync.get.query();
       const mergedSaved = uniqueStrings([...remote.savedRecipeIds, ...savedRecipeIds]);
-      const remoteShopping: ShoppingItem[] = remote.shoppingItems.map((item) => ({
+      const remoteShopping: ShoppingItem[] = remote.shoppingItems.map((item: ShoppingItem) => ({
         id: item.id,
         name: item.name,
         amount: item.amount,

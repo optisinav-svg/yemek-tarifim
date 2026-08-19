@@ -46,6 +46,8 @@ function buildUserResponse(
     | {
         openId: string;
         name?: string | null;
+        surname?: string | null;
+        username?: string | null;
         email?: string | null;
         loginMethod?: string | null;
         imageUrl?: string | null;
@@ -58,6 +60,8 @@ function buildUserResponse(
     id: (user as any)?.id ?? null,
     openId: user?.openId ?? null,
     name: user?.name ?? null,
+    surname: (user as any)?.surname ?? null,
+    username: (user as any)?.username ?? null,
     email: user?.email ?? null,
     loginMethod: user?.loginMethod ?? null,
     imageUrl: (user as any)?.imageUrl ?? null,

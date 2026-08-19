@@ -30,6 +30,8 @@ export function useAuth(options?: UseAuthOptions) {
             id: apiUser.id,
             openId: apiUser.openId,
             name: apiUser.name,
+            surname: apiUser.surname ?? null,
+            username: apiUser.username ?? null,
             email: apiUser.email,
             loginMethod: apiUser.loginMethod,
             imageUrl: apiUser.imageUrl,

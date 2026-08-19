@@ -22,6 +22,9 @@ export default function ProfileScreen() {
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [name, setName] = useState("");
+  const [surname, setSurname] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmNewPassword, setConfirmNewPassword] = useState("");
   const [avatarUrl, setAvatarUrl] = useState("");
 
   const updateProfileMutation = trpc.updateProfile.useMutation();
@@ -30,8 +33,9 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     setName(user?.name ?? "");
+    setSurname(user?.surname ?? "");
     setAvatarUrl(user?.imageUrl ?? "");
-  }, [user?.name, user?.imageUrl]);
+  }, [user?.name, user?.surname, user?.imageUrl]);
 
   const handlePickAvatar = async () => {
     try {
@@ -67,15 +71,24 @@ export default function ProfileScreen() {
 
   const handleSaveProfile = async () => {
     try {
+      if (newPassword && newPassword !== confirmNewPassword) {
+        Alert.alert("Hata", "Yeni şifreler birbiriyle aynı değil.");
+        return;
+      }
       await updateProfileMutation.mutateAsync({
         name: name.trim() || undefined,
+        surname: surname.trim() || undefined,
         imageUrl: avatarUrl || undefined,
+        password: newPassword.trim() || undefined,
+        confirmPassword: newPassword.trim() || undefined,
       });
       await refresh();
+      setNewPassword("");
+      setConfirmNewPassword("");
       setIsEditing(false);
-      Alert.alert("Başarılı", "Profiliniz güncellendi.");
-    } catch {
-      Alert.alert("Hata", "Profil güncellenemedi. Lütfen tekrar deneyin.");
+      Alert.alert("Başarılı", "Profil bilgileriniz güncellendi.");
+    } catch (error) {
+      Alert.alert("Hata", error instanceof Error ? error.message : "Profil güncellenemedi. Lütfen tekrar deneyin.");
     }
   };
 
@@ -122,16 +135,19 @@ export default function ProfileScreen() {
           <Text style={[styles.title, { color: colors.foreground }]}>Profil ve ayarlar</Text>
         </View>
 
-        <Pressable
-          onPress={() => {
-            if (!isAuthenticated) {
-              setIsAuthModalVisible(true);
-            } else {
-              setName(user?.name ?? "");
-              setAvatarUrl(user?.imageUrl ?? "");
-              setIsEditing(true);
-            }
-          }}
+          <Pressable
+            onPress={() => {
+              if (!isAuthenticated) {
+                setIsAuthModalVisible(true);
+              } else {
+                setName(user?.name ?? "");
+                setSurname(user?.surname ?? "");
+                setNewPassword("");
+                setConfirmNewPassword("");
+                setAvatarUrl(user?.imageUrl ?? "");
+                setIsEditing(true);
+              }
+            }}
           style={[styles.profileCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
           accessibilityRole="button"
           accessibilityLabel={isAuthenticated ? "Profili düzenle" : "Hesaba bağlan"}
@@ -154,11 +170,20 @@ export default function ProfileScreen() {
           <Stat value="TR" label="Mutfağım" colors={colors} />
         </View>
 
+        {isAuthenticated && (
+          <View style={[styles.memberDetailsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <DetailRow label="Ad" value={user?.name || "Belirtilmedi"} colors={colors} />
+            <DetailRow label="Soyad" value={user?.surname || "Belirtilmedi"} colors={colors} />
+            <DetailRow label="E-posta" value={user?.email || "Belirtilmedi"} colors={colors} />
+            <DetailRow label="Şifre" value="••••••••" colors={colors} />
+          </View>
+        )}
+
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tercihler ve Yönetim</Text>
         <View style={[styles.settingsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
           <SettingRow icon="bookmark" title="Listemdeki tarifler" detail={`${savedRecipeIds.length} kayıt`} colors={colors} onPress={() => router.push("/saved")} />
           <SettingRow icon="restaurant" title="Benim Tariflerim" detail="Yayınladığım tarifler" colors={colors} onPress={() => router.push("/my-recipes")} />
-          <SettingRow icon="shopping-cart" title="Alışveriş listem" detail="Market hazırlığı" colors={colors} onPress={() => router.push("/shopping")} />
+          <SettingRow icon="shopping-cart" title="Alışveriş listem" detail={isAuthenticated ? "Market hazırlığı" : "Üyelik gerekir"} colors={colors} onPress={() => { if (isAuthenticated) router.push("/shopping"); else setIsAuthModalVisible(true); }} />
           <SettingRow icon="translate" title="Dil ve Ülke" detail="Türkçe (Türkiye)" colors={colors} />
           <View style={[styles.settingRow, { borderBottomColor: colors.border }]}>
             <View style={[styles.settingIcon, { backgroundColor: "#EEE7FF" }]}>
@@ -213,7 +238,7 @@ export default function ProfileScreen() {
                 {uploadAvatarMutation.isPending ? "Fotoğraf yükleniyor..." : "Profil Fotoğrafı Seç"}
               </Text>
             </Pressable>
-            <Text style={[styles.inputLabel, { color: colors.muted }]}>Ad Soyad</Text>
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Ad</Text>
             <TextInput
               value={name}
               onChangeText={setName}
@@ -222,6 +247,42 @@ export default function ProfileScreen() {
               placeholderTextColor={colors.muted}
               editable={!isSaving}
               autoCapitalize="words"
+            />
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Soyad</Text>
+            <TextInput
+              value={surname}
+              onChangeText={setSurname}
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="Soyadınızı girin"
+              placeholderTextColor={colors.muted}
+              editable={!isSaving}
+              autoCapitalize="words"
+            />
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>E-posta (değiştirilemez)</Text>
+            <TextInput
+              value={user?.email ?? ""}
+              style={[styles.input, styles.disabledInput, { backgroundColor: colors.surface, color: colors.muted, borderColor: colors.border }]}
+              editable={false}
+            />
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Yeni şifre (isteğe bağlı)</Text>
+            <TextInput
+              value={newPassword}
+              onChangeText={setNewPassword}
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="En az 6 karakter"
+              placeholderTextColor={colors.muted}
+              editable={!isSaving}
+              secureTextEntry
+            />
+            <Text style={[styles.inputLabel, { color: colors.muted }]}>Yeni şifre tekrar</Text>
+            <TextInput
+              value={confirmNewPassword}
+              onChangeText={setConfirmNewPassword}
+              style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]}
+              placeholder="Şifreyi tekrar girin"
+              placeholderTextColor={colors.muted}
+              editable={!isSaving}
+              secureTextEntry
             />
             <View style={styles.modalActions}>
               <Pressable onPress={() => setIsEditing(false)} style={[styles.actionBtn, { backgroundColor: colors.surface }]} disabled={isSaving}>
@@ -240,6 +301,7 @@ export default function ProfileScreen() {
         onClose={() => setIsAuthModalVisible(false)}
         onSuccess={(userData) => {
           setIsAuthModalVisible(false);
+          void refresh();
           Alert.alert("Hoş Geldiniz", `${userData.name} (${userData.email}) olarak giriş yaptınız.`);
         }}
       />
@@ -261,6 +323,10 @@ function Stat({ value, label, colors }: { value: string; label: string; colors: 
   return <View style={styles.stat}><Text style={[styles.statValue, { color: colors.foreground }]}>{value}</Text><Text style={[styles.statLabel, { color: colors.muted }]}>{label}</Text></View>;
 }
 
+function DetailRow({ label, value, colors }: { label: string; value: string; colors: ReturnType<typeof useColors> }) {
+  return <View style={[styles.detailRow, { borderBottomColor: colors.border }]}><Text style={[styles.detailLabel, { color: colors.muted }]}>{label}</Text><Text style={[styles.detailValue, { color: colors.foreground }]} numberOfLines={1}>{value}</Text></View>;
+}
+
 function SettingRow({ icon, title, detail, colors, onPress }: { icon: "bookmark" | "shopping-cart" | "translate" | "restaurant"; title: string; detail: string; colors: ReturnType<typeof useColors>; onPress?: () => void }) {
   return <Pressable onPress={onPress} style={[styles.settingRow, { borderBottomColor: colors.border }]} disabled={!onPress} accessibilityRole={onPress ? "button" : undefined}><View style={[styles.settingIcon, { backgroundColor: "#FFF0DD" }]}><IconSymbol name={icon} size={18} color={colors.primary} /></View><View style={styles.settingText}><Text style={[styles.settingTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.settingDetail, { color: colors.muted }]}>{detail}</Text></View>{onPress ? <IconSymbol name="chevron.right" size={18} color={colors.muted} /> : null}</Pressable>;
 }
@@ -276,6 +342,10 @@ const styles = StyleSheet.create({
   name: { fontSize: 16, fontWeight: "900" },
   email: { marginTop: 4, fontSize: 12, fontWeight: "600" },
   stats: { flexDirection: "row", justifyContent: "space-around", marginVertical: 22 },
+  memberDetailsCard: { borderWidth: 1, borderRadius: 18, paddingHorizontal: 14, marginBottom: 22 },
+  detailRow: { minHeight: 47, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 16, borderBottomWidth: 1 },
+  detailLabel: { fontSize: 12, fontWeight: "700" },
+  detailValue: { flex: 1, textAlign: "right", fontSize: 13, fontWeight: "800" },
   stat: { alignItems: "center", gap: 3 },
   statValue: { fontSize: 20, fontWeight: "900" },
   statLabel: { fontSize: 11, fontWeight: "700" },
@@ -290,13 +360,14 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 13, fontWeight: "800" },
   deleteAccountButton: { alignItems: "center", paddingVertical: 8 },
   deleteAccountText: { fontSize: 12, fontWeight: "800" },
+  inputLabel: { fontSize: 12, fontWeight: "700", marginTop: 6 },
+  disabledInput: { opacity: 0.72 },
   security: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 },
   securityText: { fontSize: 11, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 20 },
   modalContent: { borderWidth: 1, borderRadius: 20, padding: 20, gap: 14 },
   modalTitle: { fontSize: 20, fontWeight: "900", textAlign: "center" },
   avatarPicker: { borderWidth: 1, borderRadius: 12, padding: 14, alignItems: "center", gap: 10 },
-  inputLabel: { fontSize: 12, fontWeight: "700" },
   input: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14 },
   modalActions: { flexDirection: "row", gap: 10, marginTop: 10 },
   actionBtn: { flex: 1, padding: 14, borderRadius: 12, alignItems: "center" },

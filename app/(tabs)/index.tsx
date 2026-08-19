@@ -7,6 +7,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { categories, getCategories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import { useMemberGate } from "@/components/member-gate";
 
 function Header({ onProfile, onSearch }: { onProfile: () => void; onSearch: () => void }) {
   const colors = useColors();
@@ -99,6 +100,7 @@ export default function HomeScreen() {
   const colors = useColors();
   const router = useRouter();
   const { selectedCountry } = useAppStore();
+  const { requireMember, authModal } = useMemberGate();
   const latestRecipes = getRecipes(selectedCountry);
 
   const renderHeader = () => (
@@ -134,10 +136,11 @@ export default function HomeScreen() {
         ListEmptyComponent={<Text style={[styles.emptyText, { color: colors.muted }]}>Bu seçime uygun henüz tarif bulunmuyor.</Text>}
         showsVerticalScrollIndicator={false}
       />
-      <Pressable onPress={() => router.push("/recipe/create")} style={[styles.fab, { backgroundColor: colors.primary }]} accessibilityLabel="Yeni tarif ekle">
+      <Pressable onPress={() => requireMember(() => router.push("/recipe/create"))} style={[styles.fab, { backgroundColor: colors.primary }]} accessibilityLabel="Yeni tarif ekle">
         <IconSymbol name="add" size={24} color="#FFFFFF" />
         <Text style={styles.fabText}>Tarif ekle</Text>
       </Pressable>
+      {authModal}
     </ScreenContainer>
   );
 }

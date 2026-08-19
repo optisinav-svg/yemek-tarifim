@@ -320,3 +320,16 @@
 - [ ] Web kayıt formunda başarısızlıkta görünür hata, başarıda kod ekranı geçişi sağlamak
 - [ ] Kayıt ve doğrulama akışını canlıda tek kontrollü testle doğrulamak
 - [ ] Canlı e-posta gönderim yanıtını ve Resend teslimatını doğrula
+- [ ] Ortak e-posta gönderim zincirini ve gerçek Resend hatasını düzelt
+
+- [ ] Misafir ve üye erişim modelini uygula: ana sayfayı misafirlere aç, tarif/grup ekle ve alışveriş listesi için üyelik/giriş duvarı koy, profil ekranında ad/soyad/şifre düzenleme ekle.
+
+## Kullanıcı geri bildirimi — misafir erişimi ve üyelik kapısı (19.08.2026)
+
+- [x] Ana sayfayı ve herkese açık tarif/grup keşfini misafir kullanıcılar için erişilebilir yapmak
+- [x] Tarif ekle, grup ekle ve alışveriş listesi işlemlerini üyelik/giriş kapısıyla korumak
+- [x] Misafir işlemlerinde e-posta doğrulamalı kayıt, 6 haneli kod, parola oluşturma, giriş ve şifre sıfırlama modal akışını bağlamak
+- [x] Üye profilinde ad, soyad ve parola düzenlemeyi; e-postayı sabit göstermeyi sağlamak
+- [x] Web ve mobil oturum alanlarını özel e-posta oturum tokenı/çereziyle eşleştirmek
+- [x] PostgreSQL bağlantısı erişilemediğinde public keşif sorgularının güvenli boş liste döndürmesini sağlamak
+- [x] Misafir erişimi değişiklikleri için TypeScript, test ve üretim build kontrollerini çalıştırmak

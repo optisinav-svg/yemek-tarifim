@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import crypto from "crypto";
 
 import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
@@ -200,7 +201,7 @@ export const appRouter = router({
   recipes: router({
     list: publicProcedure.input(listInputSchema).query(async ({ input }) => {
       const rows = await listPublishedRecipes(input);
-      return rows.map((row) => decodeRecipe(row));
+      return rows.map((row: Awaited<ReturnType<typeof listPublishedRecipes>>[number]) => decodeRecipe(row));
     }),
     byId: publicProcedure.input(z.object({ id: z.number().int().positive() })).query(async ({ input }) => {
       const recipe = decodeRecipe(await getRecipeById(input.id));
@@ -369,10 +370,23 @@ export const appRouter = router({
     }),
   }),
   updateProfile: protectedProcedure
-    .input(z.object({ name: z.string().trim().min(1).max(80).optional(), imageUrl: z.string().trim().max(1000).optional() }))
+    .input(z.object({
+      name: z.string().trim().min(1).max(80).optional(),
+      surname: z.string().trim().min(1).max(80).optional(),
+      imageUrl: z.string().trim().max(1000).optional(),
+      password: z.string().min(6).optional(),
+      confirmPassword: z.string().min(6).optional(),
+    }))
     .mutation(async ({ ctx, input }) => {
       await enforceMutationRateLimit(ctx, "profile-update", 30, 60 * 60 * 1000, "Profil güncelleme sınırını aştınız.");
-      await updateUserProfile(ctx.user.openId, input);
+      if (input.password !== undefined && input.password !== input.confirmPassword) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "Şifreler birbiriyle aynı değil." });
+      }
+      const { password, confirmPassword: _confirmPassword, ...profileFields } = input;
+      await updateUserProfile(ctx.user.openId, {
+        ...profileFields,
+        ...(password ? { passwordHash: crypto.createHash("sha256").update(password).digest("hex") } : {}),
+      });
       await audit(ctx, "profile_updated", "user", ctx.user.id);
       return { success: true };
     }),

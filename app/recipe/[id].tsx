@@ -203,7 +203,7 @@ export default function RecipeDetailScreen() {
 
           {mediaItems.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mediaStrip}>
-              {mediaItems.map((item) => (
+              {mediaItems.map((item: ServerRecipeResponse["media"][number]) => (
                 <View key={`${item.url}-${item.sortOrder}`} style={[styles.mediaTile, { borderColor: colors.border, backgroundColor: colors.surface }]}>
                   {item.mediaType === "image" ? (
                     <Image source={{ uri: resolveAssetUrl(item.url) }} contentFit="cover" style={styles.mediaTileImage} />
@@ -287,14 +287,14 @@ export default function RecipeDetailScreen() {
                 <Text style={[styles.attemptButtonText, { color: colors.primary }]}>{addAttemptMutation.isPending ? "Yükleniyor..." : "Fotoğraflı deneme ekle"}</Text>
               </Pressable>
 
-              {commentsQuery.data?.map((comment) => (
+              {commentsQuery.data?.map((comment: { id: number; authorName: string | null; body: string }) => (
                 <View key={comment.id} style={[styles.commentRow, { borderBottomColor: colors.border }]}>
                   <View style={[styles.commentAvatar, { backgroundColor: colors.success }]}><Text style={styles.commentAvatarText}>{(comment.authorName ?? "YK").slice(0, 2).toUpperCase()}</Text></View>
                   <View style={styles.commentBody}><Text style={[styles.commentAuthor, { color: colors.foreground }]}>{comment.authorName ?? "Yemek Tarifim kullanıcısı"}</Text><Text style={[styles.commentText, { color: colors.muted }]}>{comment.body}</Text></View>
                 </View>
               ))}
 
-              {(attemptsQuery.data ?? []).map((attempt) => (
+              {(attemptsQuery.data ?? []).map((attempt: { id: number; authorName: string | null; imageUrl: string; caption: string | null }) => (
                 <View key={attempt.id} style={[styles.attemptCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                   <Image source={{ uri: resolveAssetUrl(attempt.imageUrl) }} contentFit="cover" style={styles.attemptImage} />
                   <View style={styles.attemptInfo}><Text style={[styles.commentAuthor, { color: colors.foreground }]}>{attempt.authorName ?? "Yemek Tarifim kullanıcısı"}</Text>{attempt.caption ? <Text style={[styles.commentText, { color: colors.muted }]}>{attempt.caption}</Text> : null}</View>

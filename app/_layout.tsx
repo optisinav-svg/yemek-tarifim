@@ -89,12 +89,10 @@ export default function RootLayout() {
       <KitchenTimerProvider>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
-          <AuthGate isAuthenticated={isAuthenticated} onLoginSuccess={() => setIsAuthenticated(true)}>
             <Stack screenOptions={{ headerShown: false }}>
               <Stack.Screen name="(tabs)" />
               <Stack.Screen name="oauth/callback" />
             </Stack>
-          </AuthGate>
           <StatusBar style="auto" />
         </QueryClientProvider>
       </trpc.Provider>

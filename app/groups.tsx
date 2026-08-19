@@ -7,7 +7,8 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/app-store";
 import { trpc } from "@/lib/trpc";
-import { categories, countries, getRecipes } from "@/lib/recipe-data";
+import { useMemberGate } from "@/components/member-gate";
+import { categories, countries, getRecipes, type Recipe } from "@/lib/recipe-data";
 
 const categoryDescriptions: Record<string, string> = {
   Çorbalar: "Sıcak, doyurucu ve sofranın başlangıç lezzetleri",
@@ -30,6 +31,7 @@ export default function GroupsScreen() {
   const colors = useColors();
   const router = useRouter();
   const { selectedCountry, setSelectedCountry } = useAppStore();
+  const { requireMember, authModal } = useMemberGate();
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [groupName, setGroupName] = useState("");
   const [groupError, setGroupError] = useState("");
@@ -160,7 +162,7 @@ export default function GroupsScreen() {
                 <Text style={[styles.sectionSubtitle, { color: colors.muted }]}>{selectedCountryName} mutfağındaki gruplar</Text>
               </View>
               <Pressable
-                onPress={openCreateModal}
+                onPress={() => requireMember(openCreateModal)}
                 style={({ pressed }) => [
                   styles.addGroupButton,
                   { backgroundColor: colors.primary, opacity: pressed ? 0.78 : 1 },
@@ -191,7 +193,7 @@ export default function GroupsScreen() {
         }
         renderItem={({ item }) => {
           const count = item.isCustom
-            ? (serverRecipesQuery.data ?? []).filter((recipe) => recipe?.category === item.name).length
+            ? (serverRecipesQuery.data ?? []).filter((recipe: Pick<Recipe, "category">) => recipe.category === item.name).length
             : getRecipes(selectedCountry, item.name).length;
           return (
             <Pressable
@@ -255,6 +257,7 @@ export default function GroupsScreen() {
           </View>
         </View>
       </Modal>
+      {authModal}
     </ScreenContainer>
   );
 }
