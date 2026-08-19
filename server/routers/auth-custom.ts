@@ -63,12 +63,8 @@ export const authCustomRouter = router({
 
       const emailSent = await sendEmail(input.email, "Gastronotlar - E-posta Doğrulama Kodunuz", html);
       if (!emailSent) {
-        console.warn("[Auth] Email could not be sent via Resend.");
-        return {
-          success: false,
-          emailSent: false,
-          message: "Doğrulama e-postası gönderilemedi. Resend ayarlarını kontrol edip tekrar deneyin.",
-        };
+        console.error("[Auth Error] Email could not be sent via Resend. Check RESEND_API_KEY and domain verification.");
+        throw new Error("Doğrulama e-postası Resend üzerinden gönderilemedi. Lütfen sistem yöneticisiyle iletişime geçin.");
       }
 
       return {
