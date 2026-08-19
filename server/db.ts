@@ -11,13 +11,13 @@ let _pool: Pool | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-      const isProduction = process.env.NODE_ENV === "production" || process.env.DATABASE_URL?.includes("render.com") || process.env.DATABASE_URL?.includes("dpg-");
-      _pool = new Pool({
-        connectionString: process.env.DATABASE_URL,
-        ssl: { rejectUnauthorized: false },
-        connectionTimeoutMillis: 15000,
-        idleTimeoutMillis: 30000,
-      });
+        const isRender = process.env.DATABASE_URL?.includes("render.com") || process.env.DATABASE_URL?.includes("dpg-");
+        _pool = new Pool({
+          connectionString: process.env.DATABASE_URL,
+          ssl: isRender ? { rejectUnauthorized: false } : undefined,
+          connectionTimeoutMillis: 20000,
+          idleTimeoutMillis: 30000,
+        });
       await _pool.query("SELECT 1");
       _db = drizzle(_pool);
       // Render veritabanında daha önce oluşturulmuş tabloları geriye dönük uyumlu tut.
