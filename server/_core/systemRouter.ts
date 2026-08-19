@@ -2,8 +2,6 @@ import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { adminProcedure, publicProcedure, router } from "./trpc";
 
-import { pool } from "../../server/db";
-
 export const systemRouter = router({
   health: publicProcedure
     .input(
@@ -11,24 +9,9 @@ export const systemRouter = router({
         timestamp: z.number().min(0, "timestamp cannot be negative"),
       }),
     )
-    .query(async () => {
-      try {
-        const res = await pool.query("SELECT NOW() as now, version() as version");
-        return {
-          ok: true,
-          dbConnected: true,
-          dbTime: res.rows[0]?.now,
-          dbVersion: res.rows[0]?.version,
-          buildTag: "GASTRONOTLAR_BUILD_V99_LIVE",
-        };
-      } catch (err: any) {
-        return {
-          ok: false,
-          dbConnected: false,
-          error: err?.message ?? String(err),
-        };
-      }
-    }),
+    .query(() => ({
+      ok: true,
+    })),
 
   notifyOwner: adminProcedure
     .input(

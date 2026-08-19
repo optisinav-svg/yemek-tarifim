@@ -52,7 +52,7 @@ async function playCompletionChime() {
     });
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
     
-    for (let i = 0; i < 5; i++) {
+    for (let i = 0; i < 3; i++) {
       try {
         completionPlayer.volume = 1.0;
         completionPlayer.seekTo(0);
@@ -62,7 +62,7 @@ async function playCompletionChime() {
           await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
         }
       } catch {}
-      await new Promise((resolve) => setTimeout(resolve, 3500));
+      await new Promise((resolve) => setTimeout(resolve, 5000));
     }
   } catch {
     // The visual completed state and haptic feedback remain available if audio is unavailable.

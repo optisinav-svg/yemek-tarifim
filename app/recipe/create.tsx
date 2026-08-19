@@ -61,19 +61,17 @@ export default function CreateRecipeScreen() {
   const addStep = () => setSteps((current) => [...current, ""]);
   const total = useMemo(() => (Number(prepMinutes) || 0) + (Number(cookMinutes) || 0), [prepMinutes, cookMinutes]);
 
-  const pickMedia = async (useCamera = false) => {
+  const pickMedia = async () => {
     if (media.length >= 3) {
       Alert.alert("Medya sınırı", "Bir tarife en fazla 3 fotoğraf veya video ekleyebilirsiniz.");
       return;
     }
-    const permission = useCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("İzin gerekli", useCamera ? "Kamera kullanmak için izin vermelisiniz." : "Galeriye erişmek için izin vermelisiniz.");
-      return;
-    }
-    const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.85 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.All, allowsEditing: false, quality: 0.82, videoMaxDuration: 60 });
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.All,
+      allowsEditing: false,
+      quality: 0.82,
+      videoMaxDuration: 60,
+    });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
     const mediaType: PendingMedia["mediaType"] = asset.type === "video" ? "video" : "image";
@@ -98,15 +96,12 @@ export default function CreateRecipeScreen() {
     });
   };
 
-  const handleOcrImport = async (useCamera = false) => {
-    const permission = useCamera ? await ImagePicker.requestCameraPermissionsAsync() : await ImagePicker.requestMediaLibraryPermissionsAsync();
-    if (!permission.granted) {
-      Alert.alert("İzin gerekli", useCamera ? "Kamera kullanmak için izin vermelisiniz." : "Galeriye erişmek için izin vermelisiniz.");
-      return;
-    }
-    const result = useCamera
-      ? await ImagePicker.launchCameraAsync({ allowsEditing: true, quality: 0.85 })
-      : await ImagePicker.launchImageLibraryAsync({ mediaTypes: ImagePicker.MediaTypeOptions.Images, allowsEditing: false, quality: 0.82 });
+  const handleOcrImport = async () => {
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 0.82,
+    });
     if (result.canceled || !result.assets[0]) return;
     const asset = result.assets[0];
     const rawMimeType = asset.mimeType ?? "image/jpeg";
@@ -195,20 +190,11 @@ export default function CreateRecipeScreen() {
           <Field label="Kısa açıklama" value={summary} onChangeText={setSummary} placeholder="Bu tarifi özel yapan nedir?" colors={colors} multiline />
           <Field label="Püf noktası" value={tip} onChangeText={setTip} placeholder="Tarifin inceliğini ve dikkat edilmesi gerekenleri yazın" colors={colors} multiline />
           <View style={[styles.ocrCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            <View style={{ padding: 14, gap: 10 }}>
-              <Text style={[styles.ocrTitle, { color: colors.foreground }]}>Fotoğraftan Tarif Aktar (OCR)</Text>
-              <Text style={[styles.ocrText, { color: colors.muted }]}>Galeriden seçin veya kamerayla çekip tarifi otomatik doldurun.</Text>
-              <View style={{ flexDirection: "row", gap: 10, marginTop: 4 }}>
-                <Pressable onPress={() => void handleOcrImport(true)} disabled={isBusy} style={[styles.ocrButtonOption, { backgroundColor: colors.primary, flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }]}>
-                  <IconSymbol name="camera" size={16} color="#FFFFFF" />
-                  <Text style={{ color: "#FFFFFF", fontWeight: "800", fontSize: 13 }}>Fotoğraf Çek</Text>
-                </Pressable>
-                <Pressable onPress={() => void handleOcrImport(false)} disabled={isBusy} style={[styles.ocrButtonOption, { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", justifyContent: "center", flexDirection: "row", gap: 6 }]}>
-                  <IconSymbol name="restaurant" size={16} color={colors.foreground} />
-                  <Text style={{ color: colors.foreground, fontWeight: "800", fontSize: 13 }}>Galeriden Seç</Text>
-                </Pressable>
-              </View>
-            </View>
+            <Pressable onPress={() => void handleOcrImport()} disabled={isBusy} style={({ pressed }) => [styles.ocrAction, { opacity: isBusy ? 0.55 : pressed ? 0.72 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraftan tarif aktar">
+              <View style={[styles.ocrIcon, { backgroundColor: colors.primary }]}><IconSymbol name="camera" size={19} color="#FFFFFF" /></View>
+              <View style={styles.ocrCopy}><Text style={[styles.ocrTitle, { color: colors.foreground }]}>{ocrMutation.isPending ? "Tarif okunuyor..." : "Fotoğraftan tarif aktar"}</Text><Text style={[styles.ocrText, { color: colors.muted }]}>Bir tarif görseli seçin; alanları taslak olarak dolduralım.</Text></View>
+              <IconSymbol name="chevron.right" size={18} color={colors.muted} />
+            </Pressable>
           </View>
           <Text style={[styles.label, { color: colors.foreground }]}>Tarifin ülkesi</Text>
           <View style={styles.countryWrap} accessibilityLabel="Tarifin ülkesi">
@@ -236,49 +222,15 @@ export default function CreateRecipeScreen() {
           <Text style={[styles.label, { color: colors.foreground }]}>Tarif grubu</Text>
           <View style={styles.categoryWrap}>{availableCategories.map((item) => { const active = category === item.name; return <Pressable key={item.name} onPress={() => setCategory(item.name)} style={[styles.category, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]}><Text style={[styles.categoryText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.name}</Text></Pressable>; })}</View>
           <View style={styles.twoFields}><Field label="Porsiyon" value={servings} onChangeText={setServings} placeholder="4" colors={colors} keyboardType="number-pad" compact /><Field label="Hazırlama (dk)" value={prepMinutes} onChangeText={setPrepMinutes} placeholder="20" colors={colors} keyboardType="number-pad" compact /><Field label="Pişirme (dk)" value={cookMinutes} onChangeText={setCookMinutes} placeholder="30" colors={colors} keyboardType="number-pad" compact /></View>
-          <SectionLabel title="Malzemeler" hint="Gram, kg, ml, litre, adet, çay/yemek kaşığı, bardak" colors={colors} />
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-            {ingredients.map((ingredient, index) => (
-              <View key={index} style={[styles.listRow, { borderBottomWidth: index < ingredients.length - 1 ? 1 : 0, borderBottomColor: colors.border }]}>
-                <Text style={[styles.rowNumber, { color: colors.primary }]}>{index + 1}</Text>
-                <TextInput value={ingredient} onChangeText={(value) => updateIngredient(index, value)} placeholder="Örn. 2 su bardağı un veya 500 gr" placeholderTextColor={colors.muted} style={[styles.listInput, { color: colors.foreground }]} returnKeyType="next" />
-                {ingredients.length > 1 && (
-                  <Pressable onPress={() => setIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))}>
-                    <IconSymbol name="delete" size={18} color={colors.muted} />
-                  </Pressable>
-                )}
-              </View>
-            ))}
-            <View style={{ paddingHorizontal: 12, paddingBottom: 10, flexDirection: "row", flexWrap: "wrap", gap: 6 }}>
-              {["gram", "kg", "ml", "litre", "adet", "çay kaşığı", "yemek kaşığı", "bardak"].map((unit) => (
-                <Pressable
-                  key={unit}
-                  onPress={() => {
-                    const lastIndex = ingredients.length - 1;
-                    const cur = ingredients[lastIndex] || "";
-                    setIngredients((current) => current.map((item, i) => (i === lastIndex ? (cur ? `${cur} ${unit}` : unit) : item)));
-                  }}
-                  style={{ backgroundColor: colors.background, borderWidth: 1, borderColor: colors.border, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}
-                >
-                  <Text style={{ fontSize: 11, fontWeight: "700", color: colors.foreground }}>+ {unit}</Text>
-                </Pressable>
-              ))}
-            </View>
-            <Pressable onPress={addIngredient} style={[styles.addLine, { borderTopColor: colors.border }]}>
-              <IconSymbol name="add" size={17} color={colors.primary} />
-              <Text style={[styles.addLineText, { color: colors.primary }]}>Malzeme ekle</Text>
-            </Pressable>
-          </View>
+          <SectionLabel title="Malzemeler" hint="Miktar ve birimiyle yaz" colors={colors} />
+          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{ingredients.map((ingredient, index) => <View key={index} style={styles.listRow}><Text style={[styles.rowNumber, { color: colors.primary }]}>{index + 1}</Text><TextInput value={ingredient} onChangeText={(value) => updateIngredient(index, value)} placeholder="Örn. 2 su bardağı un" placeholderTextColor={colors.muted} style={[styles.listInput, { color: colors.foreground }]} returnKeyType="next" />{ingredients.length > 1 && <Pressable onPress={() => setIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addIngredient} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Malzeme ekle</Text></Pressable></View>
           <SectionLabel title="Yapılışı" hint="Adımları sırayla yaz" colors={colors} />
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{steps.map((step, index) => <View key={index} style={styles.stepInputRow}><View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>{index + 1}</Text></View><TextInput value={step} onChangeText={(value) => updateStep(index, value)} placeholder="Bu adımda ne yapılır?" placeholderTextColor={colors.muted} style={[styles.stepInput, { color: colors.foreground }]} multiline />{steps.length > 1 && <Pressable onPress={() => setSteps((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addStep} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Adım ekle</Text></Pressable></View>
           <View style={styles.mediaSection}>
             <View style={styles.mediaSectionHeader}><View><Text style={[styles.mediaTitle, { color: colors.foreground }]}>Fotoğraf ve video</Text><Text style={[styles.mediaText, { color: colors.muted }]}>Tarifini en fazla 3 görselle zenginleştir.</Text></View><Text style={[styles.mediaCount, { color: colors.primary }]}>{media.length}/3</Text></View>
             <View style={[styles.mediaCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
               {media.length > 0 && <View style={styles.mediaGrid}>{media.map((item, index) => <View key={`${item.uri}-${index}`} style={styles.mediaTile}>{item.mediaType === "image" ? <Image source={{ uri: item.uri }} style={styles.mediaPreview} /> : <View style={[styles.videoPreview, { backgroundColor: colors.foreground }]}><IconSymbol name="play" size={26} color={colors.background} /><Text style={[styles.videoLabel, { color: colors.background }]}>Video</Text></View>}<Pressable onPress={() => setMedia((current) => current.filter((_, itemIndex) => itemIndex !== index))} style={[styles.removeMedia, { backgroundColor: colors.background }]} accessibilityLabel="Medyayı kaldır"><IconSymbol name="close" size={15} color={colors.foreground} /></Pressable></View>)}</View>}
-              <View style={{ flexDirection: "row", gap: 10 }}>
-                <Pressable onPress={() => void pickMedia(true)} disabled={media.length >= 3} style={[styles.mediaPicker, { borderColor: colors.border, flex: 1, opacity: media.length >= 3 ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraf çek"><IconSymbol name="camera" size={16} color={colors.primary} /><Text style={[styles.mediaPickerText, { color: colors.primary }]}>Kamera ile Çek</Text></Pressable>
-                <Pressable onPress={() => void pickMedia(false)} disabled={media.length >= 3} style={[styles.mediaPicker, { borderColor: colors.border, flex: 1, opacity: media.length >= 3 ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel="Galeriden seç"><IconSymbol name="add" size={16} color={colors.primary} /><Text style={[styles.mediaPickerText, { color: colors.primary }]}>Galeriden Seç</Text></Pressable>
-              </View>
+              <Pressable onPress={() => void pickMedia()} disabled={media.length >= 3} style={[styles.mediaPicker, { borderColor: colors.border, opacity: media.length >= 3 ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraf veya video seç"><IconSymbol name="add" size={18} color={colors.primary} /><Text style={[styles.mediaPickerText, { color: colors.primary }]}>{media.length > 0 ? "Başka medya ekle" : "Galeriden fotoğraf veya video seç"}</Text></Pressable>
             </View>
           </View>
           <Pressable onPress={() => void handleSave()} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>{uploadMediaMutation.isPending ? "Medya yükleniyor..." : createMutation.isPending ? "Yayınlanıyor..." : "Tarifi yayınla"}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
@@ -298,6 +250,4 @@ function Field({ label, value, onChangeText, placeholder, colors, multiline, key
 }
 function SectionLabel({ title, hint, colors }: { title: string; hint: string; colors: ReturnType<typeof useColors> }) { return <View style={styles.sectionLabel}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>{hint}</Text></View>; }
 
-const styles = StyleSheet.create({ content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 45 }, topBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingBottom: 22 }, backButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 }, heading: { flex: 1 }, kicker: { fontSize: 10, letterSpacing: 1.3, fontWeight: "800" }, title: { marginTop: 3, fontSize: 26, fontWeight: "900" }, timeTotal: { fontSize: 12, fontWeight: "800" }, field: { marginBottom: 15 }, compactField: { flex: 1 }, ocrCard: { borderWidth: 1, borderRadius: 17, marginBottom: 17, padding: 11 }, ocrAction: { flexDirection: "row", alignItems: "center", gap: 10 }, ocrIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 12 }, ocrCopy: { flex: 1 }, ocrTitle: { fontSize: 13, fontWeight: "900" }, ocrText: { marginTop: 3, fontSize: 11, lineHeight: 16, fontWeight: "600" }, label: { marginBottom: 7, fontSize: 12, fontWeight: "800" }, input: { minHeight: 49, borderWidth: 1, borderRadius: 14, paddingHorizontal: 13, fontSize: 13, fontWeight: "600" }, multiline: { minHeight: 83, paddingTop: 12, textAlignVertical: "top" }, countryWrap: { gap: 8, marginBottom: 6 }, countryOption: { flexDirection: "row", alignItems: "center", minHeight: 68, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, gap: 11 }, countryFlag: { fontSize: 25 }, countryCopy: { flex: 1 }, countryName: { fontSize: 13, fontWeight: "900" }, countrySubtitle: { marginTop: 3, fontSize: 11, fontWeight: "600" }, countryHint: { marginBottom: 17, fontSize: 11, fontWeight: "600" }, categoryWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 17 }, category: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 }, categoryText: { fontSize: 11, fontWeight: "800" }, twoFields: { flexDirection: "row", gap: 8 }, sectionLabel: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 5, marginBottom: 9 }, sectionTitle: { fontSize: 19, fontWeight: "900" }, sectionHint: { fontSize: 11, fontWeight: "700" }, listCard: { overflow: "hidden", borderWidth: 1, borderRadius: 17, paddingHorizontal: 13 }, listRow: { flexDirection: "row", alignItems: "center", minHeight: 51, gap: 9, borderBottomWidth: 0 }, rowNumber: { width: 20, fontSize: 12, fontWeight: "900" }, listInput: { flex: 1, fontSize: 13, fontWeight: "600" }, addLine: { flexDirection: "row", alignItems: "center", gap: 6, borderTopWidth: 1, paddingVertical: 13 }, addLineText: { fontSize: 12, fontWeight: "900" }, stepInputRow: { flexDirection: "row", alignItems: "flex-start", minHeight: 68, gap: 9, paddingVertical: 9 }, stepNumber: { width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: 12, marginTop: 4 }, stepNumberText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" }, stepInput: { flex: 1, minHeight: 48, paddingTop: 7, fontSize: 13, lineHeight: 19, fontWeight: "600", textAlignVertical: "top" }, mediaSection: { marginTop: 22 }, mediaSectionHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 }, mediaCount: { fontSize: 11, fontWeight: "900" }, mediaTitle: { fontSize: 13, fontWeight: "900" }, mediaText: { marginTop: 3, fontSize: 11, fontWeight: "600" }, mediaCard: { borderWidth: 1, borderRadius: 17, padding: 10 }, mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }, mediaTile: { position: "relative", width: "31.5%", aspectRatio: 1, overflow: "hidden", borderRadius: 12 }, mediaPreview: { width: "100%", height: "100%" }, videoPreview: { flex: 1, alignItems: "center", justifyContent: "center" }, videoLabel: { marginTop: 4, fontSize: 10, fontWeight: "900" }, removeMedia: { position: "absolute", top: 5, right: 5, alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12 }, mediaPicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 45, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }, mediaPickerText: { fontSize: 12, fontWeight: "900" },   saveButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, marginTop: 18, paddingVertical: 15 },
-  saveText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" },
-  ocrButtonOption: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 6, paddingVertical: 10, borderRadius: 10 } });
+const styles = StyleSheet.create({ content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 45 }, topBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingBottom: 22 }, backButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 }, heading: { flex: 1 }, kicker: { fontSize: 10, letterSpacing: 1.3, fontWeight: "800" }, title: { marginTop: 3, fontSize: 26, fontWeight: "900" }, timeTotal: { fontSize: 12, fontWeight: "800" }, field: { marginBottom: 15 }, compactField: { flex: 1 }, ocrCard: { borderWidth: 1, borderRadius: 17, marginBottom: 17, padding: 11 }, ocrAction: { flexDirection: "row", alignItems: "center", gap: 10 }, ocrIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 12 }, ocrCopy: { flex: 1 }, ocrTitle: { fontSize: 13, fontWeight: "900" }, ocrText: { marginTop: 3, fontSize: 11, lineHeight: 16, fontWeight: "600" }, label: { marginBottom: 7, fontSize: 12, fontWeight: "800" }, input: { minHeight: 49, borderWidth: 1, borderRadius: 14, paddingHorizontal: 13, fontSize: 13, fontWeight: "600" }, multiline: { minHeight: 83, paddingTop: 12, textAlignVertical: "top" }, countryWrap: { gap: 8, marginBottom: 6 }, countryOption: { flexDirection: "row", alignItems: "center", minHeight: 68, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, gap: 11 }, countryFlag: { fontSize: 25 }, countryCopy: { flex: 1 }, countryName: { fontSize: 13, fontWeight: "900" }, countrySubtitle: { marginTop: 3, fontSize: 11, fontWeight: "600" }, countryHint: { marginBottom: 17, fontSize: 11, fontWeight: "600" }, categoryWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 17 }, category: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 }, categoryText: { fontSize: 11, fontWeight: "800" }, twoFields: { flexDirection: "row", gap: 8 }, sectionLabel: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 5, marginBottom: 9 }, sectionTitle: { fontSize: 19, fontWeight: "900" }, sectionHint: { fontSize: 11, fontWeight: "700" }, listCard: { overflow: "hidden", borderWidth: 1, borderRadius: 17, paddingHorizontal: 13 }, listRow: { flexDirection: "row", alignItems: "center", minHeight: 51, gap: 9, borderBottomWidth: 0 }, rowNumber: { width: 20, fontSize: 12, fontWeight: "900" }, listInput: { flex: 1, fontSize: 13, fontWeight: "600" }, addLine: { flexDirection: "row", alignItems: "center", gap: 6, borderTopWidth: 1, paddingVertical: 13 }, addLineText: { fontSize: 12, fontWeight: "900" }, stepInputRow: { flexDirection: "row", alignItems: "flex-start", minHeight: 68, gap: 9, paddingVertical: 9 }, stepNumber: { width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: 12, marginTop: 4 }, stepNumberText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" }, stepInput: { flex: 1, minHeight: 48, paddingTop: 7, fontSize: 13, lineHeight: 19, fontWeight: "600", textAlignVertical: "top" }, mediaSection: { marginTop: 22 }, mediaSectionHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 }, mediaCount: { fontSize: 11, fontWeight: "900" }, mediaTitle: { fontSize: 13, fontWeight: "900" }, mediaText: { marginTop: 3, fontSize: 11, fontWeight: "600" }, mediaCard: { borderWidth: 1, borderRadius: 17, padding: 10 }, mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }, mediaTile: { position: "relative", width: "31.5%", aspectRatio: 1, overflow: "hidden", borderRadius: 12 }, mediaPreview: { width: "100%", height: "100%" }, videoPreview: { flex: 1, alignItems: "center", justifyContent: "center" }, videoLabel: { marginTop: 4, fontSize: 10, fontWeight: "900" }, removeMedia: { position: "absolute", top: 5, right: 5, alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12 }, mediaPicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 45, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }, mediaPickerText: { fontSize: 12, fontWeight: "900" }, saveButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, marginTop: 18, paddingVertical: 15 }, saveText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" } });

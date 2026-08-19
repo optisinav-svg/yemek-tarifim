@@ -1,5 +1,5 @@
-import { and, desc, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/node-postgres";
+import { and, desc, eq, like, or } from "drizzle-orm";
 import { Pool } from "pg";
 import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
@@ -11,23 +11,11 @@ let _pool: Pool | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-        let dbUrl = process.env.DATABASE_URL || "";
-        // Render Internal URL'ler (dpg- ile başlayanlar) iç ağda plaintext/plain TCP kullanır.
-        // Eğer dış Render URL (.render.com) değilse SSL ayarını tamamen kapatıyoruz.
-        const isExternal = dbUrl.includes(".render.com") || dbUrl.includes("sslmode=");
-        
-        // Render PostgreSQL bağlantılarında Node.js pg havuzunun sertifika doğrulaması 
-        // nedeniyle "There was an error establishing an SSL connection" hatası vermesini 
-        // önlemek için ssl parametresini hem internal hem external adresler için güvenli 
-        // biçimde rejectUnauthorized: false ile yapılandırıyoruz.
-        _pool = new Pool({
-          connectionString: dbUrl,
-          ssl: {
-            rejectUnauthorized: false,
-          },
-          connectionTimeoutMillis: 20000,
-          idleTimeoutMillis: 30000,
-        });
+      _pool = new Pool({
+        connectionString: process.env.DATABASE_URL,
+        ssl: { rejectUnauthorized: false },
+        connectionTimeoutMillis: 5000,
+      });
       await _pool.query("SELECT 1");
       _db = drizzle(_pool);
       // Render veritabanında daha önce oluşturulmuş tabloları geriye dönük uyumlu tut.
@@ -49,11 +37,10 @@ export async function getDb() {
         }
       }
     } catch (error) {
-      console.error("[Database] Failed to connect:", error);
+      console.warn("[Database] Failed to connect:", error);
       _db = null;
       await _pool?.end().catch(() => undefined);
       _pool = null;
-      throw new Error("Veritabanı bağlantısı kurulamadı: " + (error instanceof Error ? error.message : String(error)));
     }
   }
   return _db;

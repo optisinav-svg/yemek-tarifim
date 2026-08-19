@@ -15,8 +15,8 @@ function getResendClient(): Resend | null {
 
 export async function sendEmail(to: string, subject: string, htmlContent: string): Promise<boolean> {
   const client = getResendClient();
-  // Resend'de gastronotlar.com alan adı doğrulandı; harici kullanıcılara mail gidebilmesi için gastronotlar.com adresini kullanıyoruz.
-  const fromEmail = process.env.RESEND_FROM_EMAIL || "iletisim@gastronotlar.com";
+  // Resend'de doğrulanmış alan adımızı kullanıyoruz. onboarding@resend.dev yalnızca Resend hesabı sahibine test gönderimlerinde kısıtlıdır.
+  const fromEmail = "noreply@gastronotlar.com";
 
   if (!client) {
     console.error("[Email Error] RESEND_API_KEY is not configured; verification email was not sent.");

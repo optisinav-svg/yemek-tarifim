@@ -94,12 +94,10 @@ export default function CookingModeScreen() {
         <View style={styles.stepHeader}>
           <View className="flex-row items-center justify-between">
             <Text style={[styles.stepLabel, { color: colors.primary }]}>ADIM {stepIndex + 1}</Text>
-            {voiceListening ? (
-              <View className="flex-row items-center bg-surface border border-border px-2.5 py-1 rounded-full">
-                <IconSymbol name="mic.fill" size={12} color={colors.success} />
-                <Text className="text-[10px] font-bold text-success ml-1">Sesli Kontrol Aktif</Text>
-              </View>
-            ) : null}
+            <View className="flex-row items-center bg-surface border border-border px-2.5 py-1 rounded-full">
+              <IconSymbol name="mic.fill" size={12} color={colors.success} />
+              <Text className="text-[10px] font-bold text-success ml-1">Sesli Kontrol Aktif</Text>
+            </View>
           </View>
           <Text style={[styles.helper, { color: colors.muted }]}>{lastCommand || "\"Sonraki\" veya \"Önceki\" diyerek adım ilerletebilirsin"}</Text>
         </View>

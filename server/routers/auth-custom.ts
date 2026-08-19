@@ -77,8 +77,7 @@ export const authCustomRouter = router({
       };
       } catch (error: any) {
         console.error("[Auth] requestVerificationCode error:", error);
-        const detailedMsg = error?.message || String(error);
-        throw new Error(detailedMsg.includes("Kayıt hatası:") || detailedMsg.includes("Veritabanı") || detailedMsg.includes("Doğrulama") ? detailedMsg : "Kayıt hatası: " + detailedMsg);
+        throw new Error("Kayıt hatası: " + (error?.message || error));
       }
     }),
 

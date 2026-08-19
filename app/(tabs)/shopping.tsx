@@ -4,8 +4,6 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { useColors } from "@/hooks/use-colors";
-import { useMemberGate } from "@/components/member-gate";
-import { useAuth } from "@/hooks/use-auth";
 
 type AisleCategory = "Sebze & Meyve" | "Et & Kasap" | "Süt & Şarküteri" | "Kiler & Baharat" | "Diğer";
 
@@ -44,8 +42,6 @@ const aisleIcons: Record<AisleCategory, { icon: string; color: string }> = {
 export default function ShoppingScreen() {
   const colors = useColors();
   const { shoppingItems, toggleShoppingItem, clearCheckedShopping } = useAppStore();
-  const { isAuthenticated, loading } = useAuth();
-  const { requireMember, authModal } = useMemberGate();
   const [collapsedAisles, setCollapsedAisles] = useState<Record<string, boolean>>({});
 
   const grouped: Record<AisleCategory, ShoppingItemType[]> = {
@@ -66,10 +62,6 @@ export default function ShoppingScreen() {
   const toggleAisle = (aisle: string) => {
     setCollapsedAisles((prev) => ({ ...prev, [aisle]: !prev[aisle] }));
   };
-
-  if (!isAuthenticated && !loading) {
-    return <MarketGuestView requireMember={requireMember} authModal={authModal} colors={colors} />;
-  }
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
@@ -99,30 +91,33 @@ export default function ShoppingScreen() {
           renderItem={({ item: aisle }) => {
             const items = grouped[aisle];
             const isCollapsed = collapsedAisles[aisle];
-            const meta = aisleIcons[aisle];
-            const completedCount = items.filter((i) => i.checked).length;
+            const info = aisleIcons[aisle];
+            const completedCount = items.filter((i: ShoppingItemType) => i.checked).length;
 
             return (
               <View style={[styles.aisleSection, { backgroundColor: colors.surface, borderColor: colors.border }]}>
                 <Pressable onPress={() => toggleAisle(aisle)} style={styles.aisleHeader}>
-                  <View style={[styles.aisleIconWrap, { backgroundColor: meta.color + "18" }]}>
-                    <IconSymbol name={meta.icon as any} size={18} color={meta.color} />
+                  <View style={[styles.aisleIconWrap, { backgroundColor: info.color + "18" }]}>
+                    <IconSymbol name={info.icon as any} size={18} color={info.color} />
                   </View>
                   <View style={styles.aisleTitleWrap}>
                     <Text style={[styles.aisleTitle, { color: colors.foreground }]}>{aisle}</Text>
                     <Text style={[styles.aisleSub, { color: colors.muted }]}>
-                      {items.length} ürün {completedCount > 0 ? `(${completedCount} alındı)` : ""}
+                      {completedCount}/{items.length} alındı
                     </Text>
                   </View>
-                  <IconSymbol name="chevron-right" size={20} color={colors.muted} />
+                  <IconSymbol name="chevron.right" size={18} color={colors.muted} />
                 </Pressable>
 
                 {!isCollapsed && (
                   <View style={styles.itemsList}>
-                    {items.map((item) => (
+                    {items.map((item: ShoppingItemType) => (
                       <View key={item.id} style={[styles.itemRow, { borderTopColor: colors.border }]}>
-                        <Pressable onPress={() => toggleShoppingItem(item.id)} style={[styles.checkbox, { borderColor: item.checked ? colors.success : colors.border, backgroundColor: item.checked ? colors.success + "22" : "transparent" }]}>
-                          {item.checked && <IconSymbol name="code" size={14} color={colors.success} />}
+                        <Pressable
+                          onPress={() => toggleShoppingItem(item.id)}
+                          style={[styles.checkbox, { borderColor: item.checked ? colors.success : colors.border, backgroundColor: item.checked ? colors.success : "transparent" }]}
+                        >
+                          {item.checked && <IconSymbol name="check" size={13} color="#FFFFFF" />}
                         </Pressable>
                         <View style={styles.itemTextWrap}>
                           <Text style={[styles.itemName, { color: colors.foreground, textDecorationLine: item.checked ? "line-through" : "none", opacity: item.checked ? 0.6 : 1 }]}>
@@ -143,7 +138,6 @@ export default function ShoppingScreen() {
           }}
         />
       )}
-      {authModal}
     </ScreenContainer>
   );
 }
@@ -170,39 +164,4 @@ const styles = StyleSheet.create({
   itemTextWrap: { flex: 1, flexDirection: "row", alignItems: "baseline", gap: 8 },
   itemName: { fontSize: 14, fontWeight: "700" },
   itemAmount: { fontSize: 12, fontWeight: "600" },
-  guestContainer: { flex: 1, alignItems: "center", justifyContent: "center", paddingHorizontal: 24, gap: 14 },
-  guestIconWrap: { width: 72, height: 72, borderRadius: 24, alignItems: "center", justifyContent: "center", marginBottom: 4 },
-  guestTitle: { fontSize: 20, fontWeight: "900", textAlign: "center" },
-  guestText: { fontSize: 14, fontWeight: "600", textAlign: "center", lineHeight: 20, marginBottom: 12 },
-  guestButton: { width: "100%", paddingVertical: 14, borderRadius: 16, alignItems: "center", justifyContent: "center" },
-  guestButtonText: { color: "#ffffff", fontSize: 15, fontWeight: "800" },
 });
-
-import { useEffect } from "react";
-
-function MarketGuestView({ requireMember, authModal, colors }: { requireMember: (action?: () => void) => boolean; authModal: React.ReactNode; colors: any }) {
-  useEffect(() => {
-    requireMember();
-  }, []);
-
-  return (
-    <ScreenContainer className="px-5 justify-center items-center" edges={["top", "left", "right"]}>
-      <View style={styles.guestContainer}>
-        <View style={[styles.guestIconWrap, { backgroundColor: colors.primary + "18" }]}>
-          <IconSymbol name="shopping-cart" size={40} color={colors.primary} />
-        </View>
-        <Text style={[styles.guestTitle, { color: colors.foreground }]}>Giriş Yapılması Gerekiyor</Text>
-        <Text style={[styles.guestText, { color: colors.muted }]}>
-          Market ve alışveriş listesini görüntülemek için lütfen giriş yapın.
-        </Text>
-        <Pressable
-          onPress={() => requireMember()}
-          style={[styles.guestButton, { backgroundColor: colors.primary }]}
-        >
-          <Text style={styles.guestButtonText}>Giriş Yap / Üye Ol</Text>
-        </Pressable>
-      </View>
-      {authModal}
-    </ScreenContainer>
-  );
-}
