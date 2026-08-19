@@ -68,26 +68,7 @@ export default function ShoppingScreen() {
   };
 
   if (!isAuthenticated && !loading) {
-    return (
-      <ScreenContainer className="px-5 justify-center items-center" edges={["top", "left", "right"]}>
-        <View style={styles.guestContainer}>
-          <View style={[styles.guestIconWrap, { backgroundColor: colors.primary + "18" }]}>
-            <IconSymbol name="shopping-cart" size={40} color={colors.primary} />
-          </View>
-          <Text style={[styles.guestTitle, { color: colors.foreground }]}>Market Listesi İçin Giriş Yapın</Text>
-          <Text style={[styles.guestText, { color: colors.muted }]}>
-            Tariflerden topladığınız alışveriş listesini görmek ve düzenlemek için üye girişi yapmanız gerekmektedir.
-          </Text>
-          <Pressable
-            onPress={() => requireMember()}
-            style={[styles.guestButton, { backgroundColor: colors.primary }]}
-          >
-            <Text style={styles.guestButtonText}>Giriş Yap / Üye Ol</Text>
-          </Pressable>
-        </View>
-        {authModal}
-      </ScreenContainer>
-    );
+    return <MarketGuestView requireMember={requireMember} authModal={authModal} colors={colors} />;
   }
 
   return (
@@ -196,3 +177,32 @@ const styles = StyleSheet.create({
   guestButton: { width: "100%", paddingVertical: 14, borderRadius: 16, alignItems: "center", justifyContent: "center" },
   guestButtonText: { color: "#ffffff", fontSize: 15, fontWeight: "800" },
 });
+
+import { useEffect } from "react";
+
+function MarketGuestView({ requireMember, authModal, colors }: { requireMember: (action?: () => void) => boolean; authModal: React.ReactNode; colors: any }) {
+  useEffect(() => {
+    requireMember();
+  }, []);
+
+  return (
+    <ScreenContainer className="px-5 justify-center items-center" edges={["top", "left", "right"]}>
+      <View style={styles.guestContainer}>
+        <View style={[styles.guestIconWrap, { backgroundColor: colors.primary + "18" }]}>
+          <IconSymbol name="shopping-cart" size={40} color={colors.primary} />
+        </View>
+        <Text style={[styles.guestTitle, { color: colors.foreground }]}>Giriş Yapılması Gerekiyor</Text>
+        <Text style={[styles.guestText, { color: colors.muted }]}>
+          Market ve alışveriş listesini görüntülemek için lütfen giriş yapın.
+        </Text>
+        <Pressable
+          onPress={() => requireMember()}
+          style={[styles.guestButton, { backgroundColor: colors.primary }]}
+        >
+          <Text style={styles.guestButtonText}>Giriş Yap / Üye Ol</Text>
+        </Pressable>
+      </View>
+      {authModal}
+    </ScreenContainer>
+  );
+}

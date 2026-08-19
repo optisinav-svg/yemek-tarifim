@@ -353,3 +353,5 @@
 - [ ] Render üzerindeki `DATABASE_URL` ortam değişkeninin doğru aktarıldığını ve havuzun ilk bağlantıda düşmediğini doğrula
 
 - [ ] Market (Alışveriş listesi / market) sekmesine misafirler için giriş/üyelik kapısı ekle
+
+- [ ] Market sekmesinde misafirler için ara kartı kaldırıp doğrudan giriş yap ekranını aç
