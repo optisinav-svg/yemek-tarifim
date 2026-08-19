@@ -12,6 +12,7 @@ export default function ShoppingScreen() {
   const router = useRouter();
   const { shoppingItems, toggleShoppingItem, clearCheckedShopping, addShoppingItem } = useAppStore();
   const [newItem, setNewItem] = useState("");
+  const [newAmount, setNewAmount] = useState("");
   const checkedCount = shoppingItems.filter((item) => item.checked).length;
 
   const shareList = async () => {
@@ -34,15 +35,23 @@ export default function ShoppingScreen() {
   const submitItem = () => {
     const name = newItem.trim();
     if (!name) return;
-    addShoppingItem({ name, amount: "" });
+    const amount = newAmount.trim();
+    addShoppingItem({ name, amount });
     setNewItem("");
+    setNewAmount("");
   };
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <View style={styles.topBar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="arrow-left" size={21} color={colors.foreground} /></Pressable><View style={styles.heading}><Text style={[styles.kicker, { color: colors.primary }]}>MUTFAK YARDIMCISI</Text><Text style={[styles.title, { color: colors.foreground }]}>Alışveriş listem</Text></View><View style={styles.topActions}><Pressable onPress={shareList} disabled={shoppingItems.length === 0}><Text style={[styles.share, { color: shoppingItems.length ? colors.primary : colors.muted }]}>Paylaş</Text></Pressable><Pressable onPress={clearCheckedShopping} disabled={checkedCount === 0}><Text style={[styles.clear, { color: checkedCount ? colors.error : colors.muted }]}>Temizle</Text></Pressable></View></View>
       <View style={[styles.summaryCard, { backgroundColor: colors.surface, borderColor: colors.border }]}><View style={[styles.summaryIcon, { backgroundColor: colors.success }]}><IconSymbol name="shopping-cart" size={21} color="#FFFFFF" /></View><View style={styles.summaryText}><Text style={[styles.summaryTitle, { color: colors.foreground }]}>{shoppingItems.length} malzeme hazır</Text><Text style={[styles.summarySubtitle, { color: colors.muted }]}>{checkedCount} ürün sepete girdi</Text></View><View style={[styles.progress, { backgroundColor: colors.border }]}><View style={[styles.progressFill, { backgroundColor: colors.success, width: shoppingItems.length ? `${(checkedCount / shoppingItems.length) * 100}%` : "0%" }]} /></View></View>
-      <View style={[styles.addWrap, { backgroundColor: colors.surface, borderColor: colors.border }]}><TextInput value={newItem} onChangeText={setNewItem} onSubmitEditing={submitItem} placeholder="Listeye malzeme ekle" placeholderTextColor={colors.muted} returnKeyType="done" style={[styles.input, { color: colors.foreground }]} /><Pressable onPress={submitItem} style={[styles.addButton, { backgroundColor: colors.primary }]}><IconSymbol name="add" size={20} color="#FFFFFF" /></Pressable></View>
+      <View style={[styles.addWrapColumn, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+        <TextInput value={newItem} onChangeText={setNewItem} placeholder="Malzeme adı (örn. Süt, Un)" placeholderTextColor={colors.muted} style={[styles.input, { color: colors.foreground, borderBottomWidth: 1, borderBottomColor: colors.border }]} />
+        <View style={styles.addRow}>
+          <TextInput value={newAmount} onChangeText={setNewAmount} onSubmitEditing={submitItem} placeholder="Miktar (örn. 1 lt, 500 gr)" placeholderTextColor={colors.muted} returnKeyType="done" style={[styles.inputAmount, { color: colors.foreground }]} />
+          <Pressable onPress={submitItem} style={[styles.addButton, { backgroundColor: colors.primary }]}><IconSymbol name="add" size={20} color="#FFFFFF" /></Pressable>
+        </View>
+      </View>
       <FlatList data={shoppingItems} keyExtractor={(item) => item.id} contentContainerStyle={styles.content} ListEmptyComponent={<View style={styles.empty}><IconSymbol name="shopping-cart" size={35} color={colors.muted} /><Text style={[styles.emptyTitle, { color: colors.foreground }]}>Listen henüz boş</Text><Text style={[styles.emptyText, { color: colors.muted }]}>Bir tarifte “Alışveriş listesine ekle” düğmesine dokunarak başlayabilirsin.</Text></View>} renderItem={({ item }) => <Pressable onPress={() => toggleShoppingItem(item.id)} style={[styles.item, { borderBottomColor: colors.border }]}><View style={[styles.checkbox, { borderColor: item.checked ? colors.success : colors.border, backgroundColor: item.checked ? colors.success : "transparent" }]}>{item.checked && <IconSymbol name="check" size={14} color="#FFFFFF" />}</View><Text style={[styles.itemName, { color: item.checked ? colors.muted : colors.foreground, textDecorationLine: item.checked ? "line-through" : "none" }]}>{item.name}</Text>{item.amount ? <Text style={[styles.itemAmount, { color: colors.muted }]}>{item.amount}</Text> : null}</Pressable>} showsVerticalScrollIndicator={false} />
       <Pressable style={[styles.marketButton, { backgroundColor: colors.foreground }]}><IconSymbol name="check" size={18} color={colors.background} /><Text style={[styles.marketText, { color: colors.background }]}>Market moduna geç</Text></Pressable>
     </ScreenContainer>
@@ -78,4 +87,7 @@ const styles = StyleSheet.create({
   emptyText: { marginTop: 8, textAlign: "center", fontSize: 12, lineHeight: 18, fontWeight: "600" },
   marketButton: { position: "absolute", left: 20, right: 20, bottom: 82, flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, paddingVertical: 14 },
   marketText: { fontSize: 13, fontWeight: "900" },
+  addWrapColumn: { borderWidth: 1, borderRadius: 16, marginTop: 15, marginBottom: 15, paddingHorizontal: 12, paddingVertical: 10, gap: 10 },
+  addRow: { flexDirection: "row", alignItems: "center", gap: 10 },
+  inputAmount: { flex: 1, minHeight: 44, fontSize: 13, fontWeight: "600" },
 });

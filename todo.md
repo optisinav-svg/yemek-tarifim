@@ -355,3 +355,12 @@
 - [ ] Market (Alışveriş listesi / market) sekmesine misafirler için giriş/üyelik kapısı ekle
 
 - [ ] Market sekmesinde misafirler için ara kartı kaldırıp doğrudan giriş yap ekranını aç
+
+## Kullanıcı Sıralı 7 Görev (19.08.2026)
+- [ ] 1. Widget’ın parmakla taşınması ve konumunun korunması (Sürüklenebilir sayaç)
+- [ ] 2. Sayaç alarmı: en az 15 saniye, tekrarlı ve yüksek ses
+- [ ] 3. Pişirme modu sesli kontrol: çalışmıyorsa yanıltıcı metni kaldır, çalışıyorsa sesli komutları bağla
+- [ ] 4. Alışveriş listesine el ile madde eklerken miktar (adet/gram) alanı ekleme
+- [ ] 5. Fotoğraftan tarif aktarma: galeriye ek olarak kamera ile fotoğraf çekme ve OCR akışı
+- [ ] 6. Tarif ölçü birimleri: gram, kilogram, mililitre, litre, adet, çay kaşığı, yemek kaşığı ve bardak
+- [ ] 7. Kullanıcı tariflerinin herkese görünür listeleme akışı
