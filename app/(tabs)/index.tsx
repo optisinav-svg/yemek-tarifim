@@ -86,7 +86,7 @@ function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCoun
                 <IconSymbol name={item.icon as never} size={19} color="#FFFFFF" />
               </View>
               <Text style={[styles.categoryName, { color: colors.foreground }]}>{item.name}</Text>
-              <Text style={[styles.categoryCount, { color: colors.muted }]}>{item.count} tarif</Text>
+              <Text style={[styles.categoryCount, { color: colors.muted }]}>{getCategoryCount(item.name, selectedCountry)} tarif</Text>
             </Pressable>
           );
         }}
