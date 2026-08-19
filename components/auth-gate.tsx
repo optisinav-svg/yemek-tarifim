@@ -50,11 +50,14 @@ export function AuthGate({ children, isAuthenticated, onLoginSuccess }: { childr
     }
     setLoading(true);
     try {
-      await requestVerificationMutation.mutateAsync({ name, surname, email });
+      const res = await requestVerificationMutation.mutateAsync({ name, surname, email });
+      console.log("[AuthGate] Request verification result:", res);
       Alert.alert("Başarılı", "Doğrulama kodunuz e-posta adresinize gönderildi.");
       setStep("verify");
     } catch (err: any) {
-      Alert.alert("Hata", err.message || "Kod gönderilemedi.");
+      console.error("[AuthGate] Request verification error:", err);
+      const msg = err?.message || JSON.stringify(err);
+      Alert.alert("Kayıt Hatası (Detay)", msg);
     } finally {
       setLoading(false);
     }
