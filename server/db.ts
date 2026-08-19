@@ -1,5 +1,4 @@
 import { drizzle } from "drizzle-orm/node-postgres";
-import { drizzle } from "drizzle-orm/node-postgres";
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { Pool } from "pg";
 import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
@@ -20,6 +19,29 @@ export async function getDb() {
       await _pool.query("SELECT 1");
       _db = drizzle(_pool);
       // Render veritabanında daha önce oluşturulmuş tabloları geriye dönük uyumlu tut.
+      // Tablo yoksa tamamen oluştur, varsa eksik kolonları ekle
+      await _pool.query(`
+        CREATE TABLE IF NOT EXISTS users (
+          id SERIAL PRIMARY KEY,
+          "openId" VARCHAR(64) NOT NULL UNIQUE,
+          name TEXT,
+          surname TEXT,
+          username VARCHAR(100),
+          "imageUrl" TEXT,
+          email VARCHAR(320),
+          "passwordHash" VARCHAR(255),
+          "emailVerified" BOOLEAN DEFAULT FALSE NOT NULL,
+          "emailVerifyCode" VARCHAR(12),
+          "passwordResetToken" VARCHAR(120),
+          "passwordResetExpires" TIMESTAMP,
+          "loginMethod" VARCHAR(64),
+          role VARCHAR(20) DEFAULT 'user' NOT NULL,
+          "accountStatus" VARCHAR(50) DEFAULT 'active' NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+          "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+          "lastSignedIn" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
       const alterations = [
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS surname TEXT",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS username VARCHAR(100)",
@@ -28,7 +50,9 @@ export async function getDb() {
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"emailVerifyCode\" VARCHAR(12)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordResetToken\" VARCHAR(120)",
         "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"passwordResetExpires\" TIMESTAMP",
-        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"accountStatus\" VARCHAR(50) DEFAULT 'active'"
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"accountStatus\" VARCHAR(50) DEFAULT 'active'",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"loginMethod\" VARCHAR(64)",
+        "ALTER TABLE users ADD COLUMN IF NOT EXISTS \"openId\" VARCHAR(64)"
       ];
       for (const alt of alterations) {
         try {
