@@ -11,11 +11,18 @@ let _pool: Pool | null = null;
 export async function getDb() {
   if (!_db && process.env.DATABASE_URL) {
     try {
-        const isRender = process.env.DATABASE_URL?.includes("render.com") || process.env.DATABASE_URL?.includes("dpg-");
+        let dbUrl = process.env.DATABASE_URL || "";
+        if (dbUrl.includes("dpg-") || dbUrl.includes("render.com")) {
+          if (!dbUrl.includes("sslmode=")) {
+            dbUrl += dbUrl.includes("?") ? "&sslmode=require" : "?sslmode=require";
+          }
+        }
         _pool = new Pool({
-          connectionString: process.env.DATABASE_URL,
-          ssl: isRender ? { rejectUnauthorized: false } : undefined,
-          connectionTimeoutMillis: 20000,
+          connectionString: dbUrl,
+          ssl: {
+            rejectUnauthorized: false,
+          },
+          connectionTimeoutMillis: 15000,
           idleTimeoutMillis: 30000,
         });
       await _pool.query("SELECT 1");

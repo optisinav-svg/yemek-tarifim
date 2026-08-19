@@ -364,3 +364,5 @@
 - [ ] 5. Fotoğraftan tarif aktarma: galeriye ek olarak kamera ile fotoğraf çekme ve OCR akışı
 - [ ] 6. Tarif ölçü birimleri: gram, kilogram, mililitre, litre, adet, çay kaşığı, yemek kaşığı ve bardak
 - [ ] 7. Kullanıcı tariflerinin herkese görünür listeleme akışı
+
+- [ ] Render PostgreSQL SSL alternatif çözüm araştırması
