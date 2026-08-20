@@ -81,7 +81,14 @@ const config: ExpoConfig = {
   },
   web: {
     bundler: "metro",
-    output: "static",
+    // "static" pre-renders each route's HTML at build time on the server,
+    // then React "hydrates" (re-attaches) to it in the browser. Any tiny
+    // difference between the build-time render and the real browser render
+    // (theme, auth state, locale, etc.) crashes the whole app with
+    // "Minified React error #418" and freezes the UI. "single" renders a
+    // single empty shell and lets React render everything fresh in the
+    // browser instead, so there is nothing to mismatch against.
+    output: "single",
     favicon: "./assets/images/favicon.png",
   },
   plugins: [
