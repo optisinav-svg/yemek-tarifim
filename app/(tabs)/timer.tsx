@@ -24,7 +24,22 @@ export default function TimerScreen() {
 
   const handleAdjustMinutes = (delta: number) => {
     if (running || paused) return;
-    setCustomMinutes((current) => Math.max(0, Math.min(59, current + delta)));
+    const rawMinutes = customMinutes + delta;
+    if (rawMinutes > 59) {
+      // Dakika 59'u geçince saatten bir artır, dakika 0'dan devam etsin.
+      setCustomHours((h) => Math.min(12, h + 1));
+      setCustomMinutes(rawMinutes - 60);
+    } else if (rawMinutes < 0) {
+      // Dakika 0'ın altına inince, saat varsa birini "ödünç al" ve dakika 59'dan devam etsin.
+      if (customHours > 0) {
+        setCustomHours((h) => h - 1);
+        setCustomMinutes(rawMinutes + 60);
+      } else {
+        setCustomMinutes(0);
+      }
+    } else {
+      setCustomMinutes(rawMinutes);
+    }
   };
 
   const handleAdjustHours = (delta: number) => {

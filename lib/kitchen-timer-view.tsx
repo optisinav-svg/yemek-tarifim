@@ -359,6 +359,68 @@ export function ActiveTimerWidget() {
     void AsyncStorage.setItem(TIMER_WIDGET_POSITION_KEY, JSON.stringify(next));
   }, [height, insets.bottom, insets.top, width]);
 
+  const widgetRef = useRef<View>(null);
+  const isWeb = Platform.OS === "web";
+
+  // React Native's PanResponder can be unreliable in the browser (it can
+  // get swallowed by react-native-gesture-handler's own event handling,
+  // which is why the widget looked "stuck" on web). On web we drag it
+  // directly with native pointer events on the underlying DOM node instead.
+  useEffect(() => {
+    if (!isWeb) return;
+    const node = widgetRef.current as unknown as HTMLElement | null;
+    if (!node) return;
+
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let originX = 0;
+    let originY = 0;
+
+    const onPointerDown = (e: PointerEvent) => {
+      dragging = true;
+      didDragRef.current = false;
+      startX = e.clientX;
+      startY = e.clientY;
+      const current = positionRef.current ?? defaultPosition;
+      originX = current.x;
+      originY = current.y;
+      node.setPointerCapture?.(e.pointerId);
+    };
+
+    const onPointerMove = (e: PointerEvent) => {
+      if (!dragging) return;
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      if (Math.abs(dx) > 1 || Math.abs(dy) > 1) didDragRef.current = true;
+      const next = clampWidgetPosition({ x: originX + dx, y: originY + dy }, width, height, insets.top, insets.bottom);
+      positionRef.current = next;
+      setPosition(next);
+    };
+
+    const onPointerUp = (e: PointerEvent) => {
+      if (!dragging) return;
+      dragging = false;
+      node.releasePointerCapture?.(e.pointerId);
+      const current = positionRef.current;
+      if (current) void AsyncStorage.setItem(TIMER_WIDGET_POSITION_KEY, JSON.stringify(current));
+    };
+
+    node.style.touchAction = "none";
+    node.style.cursor = "grab";
+    node.addEventListener("pointerdown", onPointerDown);
+    node.addEventListener("pointermove", onPointerMove);
+    node.addEventListener("pointerup", onPointerUp);
+    node.addEventListener("pointercancel", onPointerUp);
+
+    return () => {
+      node.removeEventListener("pointerdown", onPointerDown);
+      node.removeEventListener("pointermove", onPointerMove);
+      node.removeEventListener("pointerup", onPointerUp);
+      node.removeEventListener("pointercancel", onPointerUp);
+    };
+  }, [defaultPosition, height, insets.bottom, insets.top, isWeb, width]);
+
   const panResponder = useMemo(
     () =>
       PanResponder.create({
@@ -408,6 +470,7 @@ export function ActiveTimerWidget() {
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <View
+        ref={widgetRef}
         accessibilityRole="button"
         accessibilityLabel={completed ? "Süre tamamlandı, uyarıyı kapatmak için kapat düğmesine dokunun" : "Aktif mutfak zamanlayıcısı; gövdeden tutup taşımak için sürükleyin"}
         accessibilityHint="Sayaç gövdesini parmağınızla tutup ekran içinde taşıyabilirsiniz. Kısa dokunuş zamanlayıcı ekranını açar."
@@ -417,7 +480,7 @@ export function ActiveTimerWidget() {
         ]}
       >
         <Pressable
-          {...panResponder.panHandlers}
+          {...(isWeb ? {} : panResponder.panHandlers)}
           onPress={() => {
             if (didDragRef.current) {
               didDragRef.current = false;
