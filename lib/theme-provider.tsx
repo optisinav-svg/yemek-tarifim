@@ -13,7 +13,25 @@ const ThemeContext = createContext<ThemeContextValue | null>(null);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
   const systemScheme = useSystemColorScheme() ?? "light";
-  const [colorScheme, setColorSchemeState] = useState<ColorScheme>(systemScheme);
+  // NOT: İlk render'da her zaman "light" ile başlıyoruz çünkü statik web
+  // export'u (Render build) sunucuda hep "light" olarak üretiliyor. Client
+  // tarafında ilk render'da farklı bir değer (ör. "dark") kullanmak,
+  // sunucu ile istemci HTML'inin uyuşmamasına (hydration mismatch) ve
+  // React'ın "Minified React error #418" ile çökmesine sebep oluyordu.
+  // Gerçek sistem teması, aşağıdaki useEffect ile hydration bittikten
+  // SONRA client tarafında uygulanıyor.
+  const [colorScheme, setColorSchemeState] = useState<ColorScheme>("light");
+  const [hasHydrated, setHasHydrated] = useState(false);
+
+  useEffect(() => {
+    setHasHydrated(true);
+  }, []);
+
+  useEffect(() => {
+    if (hasHydrated) {
+      setColorSchemeState(systemScheme);
+    }
+  }, [hasHydrated, systemScheme]);
 
   const applyScheme = useCallback((scheme: ColorScheme) => {
     nativewindColorScheme.set(scheme);
@@ -61,8 +79,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     }),
     [colorScheme, setColorScheme],
   );
-  console.log(value, themeVariables)
-
   return (
     <ThemeContext.Provider value={value}>
       <View style={[{ flex: 1 }, themeVariables]}>{children}</View>
