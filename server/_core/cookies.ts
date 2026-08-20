@@ -1,4 +1,5 @@
 import type { CookieOptions, Request } from "express";
+import { ONE_YEAR_MS } from "../../shared/const.js";
 
 const LOCAL_HOSTS = new Set(["localhost", "127.0.0.1", "::1"]);
 
@@ -46,13 +47,20 @@ function getParentDomain(hostname: string): string | undefined {
 
 export function getSessionCookieOptions(
   req: Request,
-): Pick<CookieOptions, "domain" | "httpOnly" | "path" | "sameSite" | "secure"> {
+): Pick<CookieOptions, "domain" | "httpOnly" | "maxAge" | "path" | "sameSite" | "secure"> {
   const hostname = req.hostname;
   const domain = getParentDomain(hostname);
 
   return {
     domain,
     httpOnly: true,
+    // Without maxAge this becomes a browser "session cookie" that gets
+    // dropped in many situations (browser fully closing, some mobile
+    // browsers' tab-management, etc.), forcing people to log in again
+    // even though the underlying JWT (also 1 year) is still valid. Match
+    // the cookie's lifetime to the token's so "stay logged in until you
+    // log out" actually holds.
+    maxAge: ONE_YEAR_MS,
     path: "/",
     sameSite: "none",
     secure: isSecureRequest(req),
