@@ -29,6 +29,7 @@ export default function CookingModeScreen() {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (SpeechRecognition) {
         try {
+          let active = true;
           const recognition = new SpeechRecognition();
           recognition.lang = "tr-TR";
           recognition.continuous = true;
@@ -48,13 +49,25 @@ export default function CookingModeScreen() {
           recognition.onstart = () => setVoiceListening(true);
           recognition.onerror = () => setVoiceListening(false);
           recognition.onend = () => {
-            try {
-              recognition.start();
-            } catch (e) {}
+            // Sadece ekran hâlâ açıksa (pişirme modundan çıkılmadıysa)
+            // otomatik olarak yeniden başlat. Aksi halde recognition.stop()
+            // çağrısı da onend'i tetiklediği için, kapatmaya çalıştığımız
+            // anda kendini tekrar başlatıp mikrofonu sonsuza dek açık
+            // bırakıyordu.
+            if (active) {
+              try {
+                recognition.start();
+              } catch (e) {}
+            } else {
+              setVoiceListening(false);
+            }
           };
           recognition.start();
           return () => {
+            active = false;
+            setVoiceListening(false);
             try { recognition.stop(); } catch (e) {}
+            try { recognition.abort(); } catch (e) {}
           };
         } catch (e) {
           console.log("Voice command initialization error:", e);
