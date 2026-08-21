@@ -121,7 +121,7 @@ export default function ProfileScreen() {
   const displayAvatar = isEditing ? avatarUrl : user?.imageUrl;
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
+    <ScreenContainer className="px-5" edges={["top", "bottom", "left", "right"]}>
       <ScrollView contentContainerStyle={{ paddingBottom: 30 }}>
         <View style={styles.topBar}>
           <Pressable

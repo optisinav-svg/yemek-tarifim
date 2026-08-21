@@ -1,3 +1,17 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Web-only: give the page a fixed, full viewport height so React Native's
+   flex:1 containers (and ScrollView) have a real height to size against.
+   Without this, content can overflow past the top/bottom of the screen
+   instead of scrolling inside its container. */
+html,
+body,
+#root {
+  height: 100%;
+}
+body {
+  margin: 0;
+  overflow: hidden;
+}
