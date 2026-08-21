@@ -422,7 +422,7 @@ export function ActiveTimerWidget() {
       node.removeEventListener("pointerup", onPointerUp);
       node.removeEventListener("pointercancel", onPointerUp);
     };
-  }, [defaultPosition, height, insets.bottom, insets.top, isWeb, width]);
+  }, [defaultPosition, height, insets.bottom, insets.top, isWeb, status, width]);
 
   const panResponder = useMemo(
     () =>
