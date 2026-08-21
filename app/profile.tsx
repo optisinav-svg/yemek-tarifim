@@ -225,6 +225,7 @@ export default function ProfileScreen() {
       <Modal visible={isEditing} animationType="slide" transparent onRequestClose={() => setIsEditing(false)}>
         <View style={styles.modalOverlay}>
           <View style={[styles.modalContent, { backgroundColor: colors.background, borderColor: colors.border }]}>
+            <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
             <Text style={[styles.modalTitle, { color: colors.foreground }]}>Profili Düzenle</Text>
             <Pressable
               onPress={() => void handlePickAvatar()}
@@ -292,6 +293,7 @@ export default function ProfileScreen() {
                 <Text style={{ color: "#FFFFFF", fontWeight: "700" }}>{isSaving ? "Kaydediliyor..." : "Kaydet"}</Text>
               </Pressable>
             </View>
+            </ScrollView>
           </View>
         </View>
       </Modal>
@@ -365,7 +367,8 @@ const styles = StyleSheet.create({
   security: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, marginTop: 14 },
   securityText: { fontSize: 11, fontWeight: "700" },
   modalOverlay: { flex: 1, backgroundColor: "rgba(0,0,0,0.5)", justifyContent: "center", padding: 20 },
-  modalContent: { borderWidth: 1, borderRadius: 20, padding: 20, gap: 14 },
+  modalContent: { borderWidth: 1, borderRadius: 20, maxHeight: "88%" },
+  modalScrollContent: { padding: 20, gap: 14 },
   modalTitle: { fontSize: 20, fontWeight: "900", textAlign: "center" },
   avatarPicker: { borderWidth: 1, borderRadius: 12, padding: 14, alignItems: "center", gap: 10 },
   input: { borderWidth: 1, borderRadius: 12, padding: 12, fontSize: 14 },

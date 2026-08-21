@@ -102,8 +102,8 @@ export default function RootLayout() {
       </trpc.Provider>
       <ActiveTimerWidget />
       </KitchenTimerProvider>
-      </AppStoreProvider>
       </MealPlanProvider>
+      </AppStoreProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );

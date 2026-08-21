@@ -4,6 +4,7 @@ import crypto from "crypto";
 
 import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
+import { SUPPORTED_TRANSLATION_LANGUAGES } from "../shared/const";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
 import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
@@ -49,6 +50,19 @@ const uploadInputSchema = z.object({
 const ocrInputSchema = z.object({
   dataBase64: z.string().trim().min(16).max(12_000_000).regex(/^[A-Za-z0-9+/]+={0,2}$/, "Geçersiz görsel verisi."),
   mimeType: z.enum(["image/jpeg", "image/png", "image/webp"]),
+});
+
+const translateInputSchema = z.object({
+  id: z.number().int().positive(),
+  targetLanguage: z.enum(["en", "de", "fr", "es", "ar", "ru"]),
+});
+
+const translateResultSchema = z.object({
+  title: z.string(),
+  summary: z.string(),
+  tip: z.string(),
+  ingredients: z.array(z.object({ name: z.string(), amount: z.union([z.string(), z.number()]).nullable().optional(), unit: z.string().optional() })),
+  steps: z.array(z.string()),
 });
 
 const ocrResultSchema = z.object({
@@ -207,6 +221,46 @@ export const appRouter = router({
       const recipe = decodeRecipe(await getRecipeById(input.id));
       if (!recipe) return null;
       return { ...recipe, media: await listRecipeMedia(input.id) };
+    }),
+    translate: publicProcedure.input(translateInputSchema).mutation(async ({ ctx, input }) => {
+      const bucketKey = `translate:${getRequestIp(ctx.req)}`;
+      const rate = await consumeRateLimit(bucketKey, 30, 60 * 60 * 1000);
+      if (!rate.allowed) {
+        throw new TRPCError({ code: "TOO_MANY_REQUESTS", message: "Kısa sürede çok fazla çeviri isteği gönderildi. Lütfen biraz sonra tekrar deneyin." });
+      }
+      const recipe = decodeRecipe(await getRecipeById(input.id));
+      if (!recipe) {
+        throw new TRPCError({ code: "NOT_FOUND", message: "Tarif bulunamadı." });
+      }
+      const languageName = SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === input.targetLanguage)?.label ?? input.targetLanguage;
+      const response = await invokeLLM({
+        model: "gemini-3-flash-preview",
+        max_tokens: 3000,
+        messages: [
+          {
+            role: "system",
+            content: `Sen bir yemek tarifi çevirmenisin. Verilen Türkçe tarifi ${languageName} diline çevir. Malzeme miktarlarındaki sayıları DEĞİŞTİRME, sadece birim ve isim metnini çevir. Yalnızca istenen JSON nesnesini döndür, başka açıklama ekleme.`,
+          },
+          {
+            role: "user",
+            content: JSON.stringify({
+              title: recipe.title,
+              summary: recipe.summary ?? "",
+              tip: recipe.tip ?? "",
+              ingredients: recipe.ingredients,
+              steps: recipe.steps,
+            }),
+          },
+        ],
+        response_format: { type: "json_object" },
+      });
+      const content = response.choices[0]?.message.content;
+      const jsonText = typeof content === "string" ? content : content.filter((part) => part.type === "text").map((part) => part.text).join("\n");
+      try {
+        return translateResultSchema.parse(JSON.parse(jsonText));
+      } catch {
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Çeviri şu anda yapılamadı. Lütfen tekrar deneyin." });
+      }
     }),
     media: router({
       upload: protectedProcedure.input(uploadInputSchema).mutation(async ({ ctx, input }) => {

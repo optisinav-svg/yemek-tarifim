@@ -1,6 +1,6 @@
 import type { ImageSourcePropType } from "react-native";
 
-export type CountryCode = "TR" | "ALL";
+export type CountryCode = "TR" | "AZ" | "ALL";
 
 export type Ingredient = {
   amount: number | null;
@@ -37,6 +37,7 @@ export const recipeImages = {
 
 export const countries = [
   { code: "TR" as CountryCode, name: "Türkiye", flag: "🇹🇷", subtitle: "Anadolu sofraları" },
+  { code: "AZ" as CountryCode, name: "Azerbaycan", flag: "🇦🇿", subtitle: "Kafkas sofraları" },
   { code: "ALL" as CountryCode, name: "Tümü", flag: "🌍", subtitle: "Dünya mutfakları" },
 ];
 

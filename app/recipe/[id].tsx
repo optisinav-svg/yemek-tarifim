@@ -2,7 +2,7 @@ import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useMemo, useState } from "react";
-import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Share } from "react-native";
+import { ActivityIndicator, Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View, Share } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -10,6 +10,7 @@ import { useAppStore } from "@/lib/app-store";
 import { formatTotalTime, getRecipe, recipeImages, type Recipe } from "@/lib/recipe-data";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
+import { SUPPORTED_TRANSLATION_LANGUAGES } from "@/shared/const";
 import { formatIngredient } from "@/lib/recipe-utils";
 import { useColors } from "@/hooks/use-colors";
 
@@ -28,6 +29,14 @@ type ServerRecipeResponse = {
   steps: unknown;
   createdAt: Date | string;
   media: { url: string; mediaType: "image" | "video"; mimeType: string; sortOrder: number }[];
+};
+
+type TranslateResult = {
+  title: string;
+  summary: string;
+  tip: string;
+  ingredients: { name: string; amount?: string | number | null; unit?: string }[];
+  steps: string[];
 };
 
 function resolveAssetUrl(url: string) {
@@ -110,6 +119,18 @@ export default function RecipeDetailScreen() {
   const [servings, setServings] = useState(recipe?.servings ?? 4);
   const [commentText, setCommentText] = useState("");
   const [attemptCaption, setAttemptCaption] = useState("");
+  const [isLanguagePickerOpen, setIsLanguagePickerOpen] = useState(false);
+  const [selectedLanguage, setSelectedLanguage] = useState<(typeof SUPPORTED_TRANSLATION_LANGUAGES)[number]["code"]>("tr");
+  const [translations, setTranslations] = useState<Partial<Record<string, TranslateResult>>>({});
+  const translateMutation = trpc.recipes.translate.useMutation({
+    onSuccess: (data) => {
+      setTranslations((current) => ({ ...current, [selectedLanguage]: data }));
+    },
+    onError: (error) => {
+      Alert.alert("Çeviri yapılamadı", error.message);
+      setSelectedLanguage("tr");
+    },
+  });
   const utils = trpc.useUtils();
   const commentsQuery = trpc.recipes.community.comments.useQuery(
     { recipeId: serverId },
@@ -170,14 +191,33 @@ export default function RecipeDetailScreen() {
 
   const ingredients = useMemo(() => {
     if (!recipe) return [];
-    return recipe.ingredients.map((ingredient) => {
-      return formatIngredient(ingredient, servings, recipe.servings);
+    const activeTranslation = selectedLanguage !== "tr" ? translations[selectedLanguage] : undefined;
+    return recipe.ingredients.map((ingredient, index) => {
+      const translatedName = activeTranslation?.ingredients[index]?.name;
+      const translatedUnit = activeTranslation?.ingredients[index]?.unit;
+      const merged = { ...ingredient, name: translatedName || ingredient.name, unit: translatedUnit || ingredient.unit };
+      return formatIngredient(merged, servings, recipe.servings);
     });
-  }, [recipe, servings]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [recipe, servings, selectedLanguage, translations]);
+
+  const handleSelectLanguage = (code: (typeof SUPPORTED_TRANSLATION_LANGUAGES)[number]["code"]) => {
+    setIsLanguagePickerOpen(false);
+    setSelectedLanguage(code);
+    if (code === "tr" || translations[code] || !Number.isInteger(serverId) || serverId <= 0) return;
+    translateMutation.mutate({ id: serverId, targetLanguage: code as "en" | "de" | "fr" | "es" | "ar" | "ru" });
+  };
 
   if (!recipe) {
     return <ScreenContainer className="px-5 items-center justify-center"><Text style={[styles.title, { color: colors.foreground }]}>{serverRecipeQuery.isLoading ? "Tarif yükleniyor..." : "Tarif bulunamadı."}</Text></ScreenContainer>;
   }
+
+  const activeTranslation = selectedLanguage !== "tr" ? translations[selectedLanguage] : undefined;
+  const displayTitle = activeTranslation?.title || recipe.title;
+  const displaySummary = activeTranslation?.summary || recipe.summary;
+  const displayTip = activeTranslation?.tip || recipe.tip;
+  const displaySteps = activeTranslation?.steps?.length ? activeTranslation.steps : recipe.steps;
+  const isTranslating = translateMutation.isPending;
 
   const saved = savedRecipeIds.includes(recipe.id);
   const totalTime = formatTotalTime(recipe);
@@ -191,15 +231,36 @@ export default function RecipeDetailScreen() {
           <View style={styles.heroActions}>
             <Pressable onPress={() => router.back()} style={styles.heroButton} accessibilityLabel="Geri dön"><IconSymbol name="arrow-left" size={21} color="#FFFFFF" /></Pressable>
             <View style={styles.heroActionGroup}>
+              <Pressable onPress={() => setIsLanguagePickerOpen(true)} style={styles.heroButton} accessibilityLabel="Dil değiştir">
+                {isTranslating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="translate" size={20} color="#FFFFFF" />}
+              </Pressable>
               <Pressable onPress={() => toggleSaved(recipe.id)} style={styles.heroButton} accessibilityLabel={saved ? "Tarifi listeden çıkar" : "Tarifi listeme ekle"}><IconSymbol name={saved ? "bookmark.fill" : "bookmark"} size={20} color="#FFFFFF" /></Pressable>
               <Pressable onPress={() => router.push("/shopping")} style={styles.heroButton} accessibilityLabel="Alışveriş listesi"><IconSymbol name="shopping-cart" size={20} color="#FFFFFF" /></Pressable>
             </View>
           </View>
           <View style={styles.heroTitleWrap}>
-            <Text style={styles.heroKicker}>{recipe.flag} {recipe.category}</Text>
-            <Text style={styles.heroTitle}>{recipe.title}</Text>
+            <Text style={styles.heroKicker}>{recipe.flag} {recipe.category}{selectedLanguage !== "tr" ? ` · ${SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === selectedLanguage)?.label}` : ""}</Text>
+            <Text style={styles.heroTitle}>{displayTitle}</Text>
           </View>
         </View>
+
+        {isLanguagePickerOpen && (
+          <View style={[styles.languageOverlay, { backgroundColor: "rgba(0,0,0,0.5)" }]}>
+            <View style={[styles.languageSheet, { backgroundColor: colors.background }]}>
+              <View style={styles.languageHeader}>
+                <Text style={[styles.languageTitle, { color: colors.foreground }]}>Dil seç</Text>
+                <Pressable onPress={() => setIsLanguagePickerOpen(false)}><IconSymbol name="close" size={22} color={colors.foreground} /></Pressable>
+              </View>
+              {SUPPORTED_TRANSLATION_LANGUAGES.map((lang) => (
+                <Pressable key={lang.code} onPress={() => handleSelectLanguage(lang.code)} style={[styles.languageRow, { borderColor: colors.border, backgroundColor: selectedLanguage === lang.code ? colors.surface : "transparent" }]}>
+                  <Text style={{ color: colors.foreground, fontWeight: selectedLanguage === lang.code ? "800" : "500", fontSize: 15 }}>{lang.label}</Text>
+                  {selectedLanguage === lang.code && <IconSymbol name="check" size={18} color={colors.primary} />}
+                </Pressable>
+              ))}
+              <Text style={[styles.languageNote, { color: colors.muted }]}>Çeviriler otomatik oluşturulur, orijinal Türkçe metinle küçük farklar olabilir.</Text>
+            </View>
+          </View>
+        )}
 
           {mediaItems.length > 0 && (
             <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.mediaStrip}>
@@ -225,7 +286,7 @@ export default function RecipeDetailScreen() {
             <Pressable onPress={() => router.push("/search")}><IconSymbol name="more" size={23} color={colors.muted} /></Pressable>
           </View>
 
-          <Text style={[styles.summary, { color: colors.muted }]}>{recipe.summary}</Text>
+          <Text style={[styles.summary, { color: colors.muted }]}>{displaySummary}</Text>
 
           <View style={[styles.stats, { backgroundColor: colors.surface, borderColor: colors.border }]}>
             <Stat icon="timer" label="Hazırlama" value={`${recipe.prepMinutes} dk`} colors={colors} />
@@ -247,11 +308,11 @@ export default function RecipeDetailScreen() {
           </View>
           <Pressable onPress={() => addRecipeToShopping(recipe, servings)} style={[styles.shoppingButton, { backgroundColor: colors.success }]}><IconSymbol name="shopping-cart" size={19} color="#FFFFFF" /><Text style={styles.actionText}>Alışveriş listesine ekle</Text></Pressable>
 
-          <View style={[styles.tipCard, { backgroundColor: "#FFF0DD" }]}><Text style={styles.tipEmoji}>✦</Text><View style={{ flex: 1 }}><Text style={[styles.tipTitle, { color: colors.foreground }]}>Püf noktası</Text><Text style={[styles.tipText, { color: colors.muted }]}>{recipe.tip}</Text></View></View>
+          <View style={[styles.tipCard, { backgroundColor: "#FFF0DD" }]}><Text style={styles.tipEmoji}>✦</Text><View style={{ flex: 1 }}><Text style={[styles.tipTitle, { color: colors.foreground }]}>Püf noktası</Text><Text style={[styles.tipText, { color: colors.muted }]}>{displayTip}</Text></View></View>
 
-          <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Yapılışı</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>{recipe.steps.length} adım</Text></View>
+          <View style={styles.sectionHeader}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>Yapılışı</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>{displaySteps.length} adım</Text></View>
           <View style={styles.steps}>
-            {recipe.steps.map((step, index) => <View key={step} style={styles.stepRow}><View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>{index + 1}</Text></View><Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text></View>)}
+            {displaySteps.map((step, index) => <View key={step} style={styles.stepRow}><View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>{index + 1}</Text></View><Text style={[styles.stepText, { color: colors.foreground }]}>{step}</Text></View>)}
           </View>
 
           {Number.isInteger(serverId) && serverId > 0 && (
@@ -331,6 +392,12 @@ function Stat({ icon, label, value, colors }: { icon: "timer" | "restaurant" | "
 }
 
 const styles = StyleSheet.create({
+  languageOverlay: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, justifyContent: "flex-end", zIndex: 30 },
+  languageSheet: { borderTopLeftRadius: 22, borderTopRightRadius: 22, padding: 20, paddingBottom: 34 },
+  languageHeader: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 12 },
+  languageTitle: { fontSize: 18, fontWeight: "800" },
+  languageRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", borderWidth: 1, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 13, marginBottom: 8 },
+  languageNote: { fontSize: 12, marginTop: 6, lineHeight: 17 },
   content: { paddingBottom: 46 },
   title: { fontSize: 24, fontWeight: "900" },
   heroWrap: { height: 355, position: "relative" },
