@@ -193,7 +193,13 @@ class SDKServer {
       });
       const { openId, appId, name } = payload as Record<string, unknown>;
 
-      if (!isNonEmptyString(openId) || !isNonEmptyString(appId) || !isNonEmptyString(name)) {
+      // appId only matters for the legacy external OAuth flow (Google
+      // login, etc.), which isn't configured in this deployment
+      // (VITE_APP_ID is intentionally empty). Requiring it to be
+      // non-empty was rejecting otherwise-valid custom email/password
+      // sessions with a correct signature, causing 401s right after a
+      // successful login.
+      if (!isNonEmptyString(openId) || !isNonEmptyString(name) || typeof appId !== "string") {
         console.warn("[Auth] Session payload missing required fields");
         return null;
       }
