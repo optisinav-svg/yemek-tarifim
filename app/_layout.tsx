@@ -9,6 +9,7 @@ import { Platform } from "react-native";
 import "@/lib/_core/nativewind-pressable";
 import { ThemeProvider } from "@/lib/theme-provider";
 import { AppStoreProvider } from "@/lib/app-store";
+import { MealPlanProvider } from "@/lib/meal-plan-store";
 import { ActiveTimerWidget, KitchenTimerProvider } from "@/lib/kitchen-timer";
 import {
   SafeAreaFrameContext,
@@ -88,6 +89,7 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1 }}>
       <AuthProvider>
       <AppStoreProvider>
+      <MealPlanProvider>
       <KitchenTimerProvider>
       <trpc.Provider client={trpcClient} queryClient={queryClient}>
         <QueryClientProvider client={queryClient}>
@@ -101,6 +103,7 @@ export default function RootLayout() {
       <ActiveTimerWidget />
       </KitchenTimerProvider>
       </AppStoreProvider>
+      </MealPlanProvider>
       </AuthProvider>
     </GestureHandlerRootView>
   );
