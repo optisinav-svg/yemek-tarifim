@@ -43,7 +43,7 @@ export default function ProfileScreen() {
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
         aspect: [1, 1],
-        quality: 0.8,
+        quality: 0.3,
         base64: true,
       });
       const asset = result.canceled ? undefined : result.assets[0];
