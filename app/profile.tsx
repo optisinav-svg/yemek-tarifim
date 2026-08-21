@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
-import { Alert, Modal, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
+import { Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import { Image } from "expo-image";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { AvatarCropModal } from "@/components/avatar-crop-modal";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/app-store";
@@ -37,8 +38,23 @@ export default function ProfileScreen() {
     setAvatarUrl(user?.imageUrl ?? "");
   }, [user?.name, user?.surname, user?.imageUrl]);
 
+  const [pendingCropUri, setPendingCropUri] = useState<string | null>(null);
+
   const handlePickAvatar = async () => {
     try {
+      if (Platform.OS === "web") {
+        // Web'de allowsEditing/yakınlaştırma desteklenmiyor; ham fotoğrafı
+        // alıp kendi kırpma ekranımızda (AvatarCropModal) açıyoruz.
+        const result = await ImagePicker.launchImageLibraryAsync({
+          mediaTypes: ImagePicker.MediaTypeOptions.Images,
+          quality: 1,
+        });
+        const asset = result.canceled ? undefined : result.assets[0];
+        if (!asset?.uri) return;
+        setPendingCropUri(asset.uri);
+        return;
+      }
+
       const result = await ImagePicker.launchImageLibraryAsync({
         mediaTypes: ImagePicker.MediaTypeOptions.Images,
         allowsEditing: true,
@@ -67,6 +83,11 @@ export default function ProfileScreen() {
     } catch {
       Alert.alert("Hata", "Profil fotoğrafı yüklenemedi.");
     }
+  };
+
+  const handleCropConfirm = (dataUrl: string) => {
+    setPendingCropUri(null);
+    setAvatarUrl(dataUrl);
   };
 
   const handleSaveProfile = async () => {
@@ -297,6 +318,14 @@ export default function ProfileScreen() {
           </View>
         </View>
       </Modal>
+
+      <AvatarCropModal
+        visible={pendingCropUri !== null}
+        imageUri={pendingCropUri}
+        colors={colors}
+        onCancel={() => setPendingCropUri(null)}
+        onConfirm={handleCropConfirm}
+      />
 
       <AuthModal
         visible={isAuthModalVisible}
