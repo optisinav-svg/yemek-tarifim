@@ -324,7 +324,10 @@ export function ActiveTimerWidget() {
   const router = useRouter();
   const { width, height } = useWindowDimensions();
   const { status, remainingSeconds, pause, resume, dismiss } = useKitchenTimer();
-  const defaultPosition = clampWidgetPosition({ x: width - WIDGET_WIDTH - 14, y: insets.top + 8 }, width, height, insets.top, insets.bottom);
+  const defaultPosition = useMemo(
+    () => clampWidgetPosition({ x: width - WIDGET_WIDTH - 14, y: insets.top + 8 }, width, height, insets.top, insets.bottom),
+    [width, height, insets.top, insets.bottom],
+  );
   const [position, setPosition] = useState<WidgetPosition | null>(null);
   const positionRef = useRef<WidgetPosition | null>(null);
   const didDragRef = useRef(false);

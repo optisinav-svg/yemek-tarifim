@@ -155,14 +155,14 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
             {mode !== "verify" && mode !== "password" && (
               <>
                 <Label text="E-posta Adresi" colors={colors} />
-                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="ornek@mail.com" placeholderTextColor={colors.muted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="ornek@mail.com" placeholderTextColor={colors.muted} value={email} onChangeText={setEmail} keyboardType="email-address" autoCapitalize="none" autoComplete="email" textContentType="emailAddress" importantForAutofill="yes" />
               </>
             )}
 
             {mode === "verify" && (
               <>
                 <Text style={[styles.hint, { color: colors.muted }]}>{email} adresine gönderilen 6 haneli kodu girin.</Text>
-                <TextInput style={[styles.input, styles.codeInput, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="123456" placeholderTextColor={colors.muted} value={verificationCode} onChangeText={setVerificationCode} keyboardType="number-pad" maxLength={6} />
+                <TextInput style={[styles.input, styles.codeInput, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="123456" placeholderTextColor={colors.muted} value={verificationCode} onChangeText={setVerificationCode} keyboardType="number-pad" maxLength={6} autoComplete="one-time-code" textContentType="oneTimeCode" />
               </>
             )}
 
@@ -170,14 +170,14 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
               <>
                 <Text style={[styles.hint, { color: colors.muted }]}>{email} adresi doğrulandı.</Text>
                 <Label text="Kullanıcı Adı" colors={colors} />
-                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="kullaniciadi" placeholderTextColor={colors.muted} value={username} onChangeText={setUsername} autoCapitalize="none" />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="kullaniciadi" placeholderTextColor={colors.muted} value={username} onChangeText={setUsername} autoCapitalize="none" autoComplete="username" textContentType="username" />
                 <View style={styles.passwordHeader}>
                   <Label text="Şifre" colors={colors} />
                   <Pressable onPress={() => setSecurePassword(!securePassword)}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>{securePassword ? "Göster" : "Gizle"}</Text></Pressable>
                 </View>
-                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="En az 6 karakter" placeholderTextColor={colors.muted} value={password} onChangeText={setPassword} secureTextEntry={securePassword} />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="En az 6 karakter" placeholderTextColor={colors.muted} value={password} onChangeText={setPassword} secureTextEntry={securePassword} autoComplete="new-password" textContentType="newPassword" importantForAutofill="yes" />
                 <Label text="Şifre Tekrar" colors={colors} />
-                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="Şifreyi tekrar girin" placeholderTextColor={colors.muted} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={securePassword} />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="Şifreyi tekrar girin" placeholderTextColor={colors.muted} value={confirmPassword} onChangeText={setConfirmPassword} secureTextEntry={securePassword} autoComplete="new-password" textContentType="newPassword" />
               </>
             )}
 
@@ -187,7 +187,7 @@ export function AuthModal({ visible, onClose, onSuccess }: AuthModalProps) {
                   <Label text="Şifre" colors={colors} />
                   <Pressable onPress={() => setSecurePassword(!securePassword)}><Text style={{ color: colors.primary, fontSize: 12, fontWeight: "700" }}>{securePassword ? "Göster" : "Gizle"}</Text></Pressable>
                 </View>
-                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="En az 6 karakter" placeholderTextColor={colors.muted} value={password} onChangeText={setPassword} secureTextEntry={securePassword} />
+                <TextInput style={[styles.input, { backgroundColor: colors.surface, color: colors.foreground, borderColor: colors.border }]} placeholder="En az 6 karakter" placeholderTextColor={colors.muted} value={password} onChangeText={setPassword} secureTextEntry={securePassword} autoComplete="current-password" textContentType="password" importantForAutofill="yes" />
                 <View style={styles.optionsRow}>
                   <Pressable onPress={() => setRememberMe(!rememberMe)} style={styles.rememberRow}><View style={[styles.checkbox, { borderColor: colors.primary, backgroundColor: rememberMe ? colors.primary : "transparent" }]}>{rememberMe && <IconSymbol name="check" size={12} color="#FFFFFF" />}</View><Text style={[styles.rememberText, { color: colors.foreground }]}>Beni Hatırla</Text></Pressable>
                   <Pressable onPress={() => setMode("forgot")}><Text style={[styles.forgotText, { color: colors.primary }]}>Şifremi Unuttum</Text></Pressable>
