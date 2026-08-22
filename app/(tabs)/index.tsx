@@ -66,7 +66,7 @@ function CountrySelector() {
   );
 }
 
-function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCountry: any; onCategory: (category: string) => void; onSeeAll: () => void }) {
+function CategoryStrip({ selectedCountry, onCategory, onSeeAll, allRecipesData }: { selectedCountry: any; onCategory: (category: string) => void; onSeeAll: () => void; allRecipesData: { category: string }[] }) {
   const colors = useColors();
   return (
     <View style={styles.categorySection}>
@@ -90,7 +90,7 @@ function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCoun
                 <IconSymbol name={item.icon as never} size={19} color="#FFFFFF" />
               </View>
               <Text style={[styles.categoryName, { color: colors.foreground }]}>{item.name}</Text>
-              <Text style={[styles.categoryCount, { color: colors.muted }]}>{(recipesQuery.data ?? []).filter((r) => r.category === item.name).length} tarif</Text>
+              <Text style={[styles.categoryCount, { color: colors.muted }]}>{allRecipesData.filter((r) => r.category === item.name).length} tarif</Text>
             </Pressable>
           );
         }}
@@ -120,7 +120,7 @@ export default function HomeScreen() {
         <View style={[styles.searchShortcut, { backgroundColor: colors.background }]}><Text style={[styles.searchShortcutText, { color: colors.muted }]}>⌘ K</Text></View>
       </Pressable>
       <CountrySelector />
-      <CategoryStrip selectedCountry={selectedCountry} onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} onSeeAll={() => router.push("/groups")} />
+      <CategoryStrip selectedCountry={selectedCountry} onCategory={(category) => router.push({ pathname: "/group/[category]", params: { category } })} onSeeAll={() => router.push("/groups")} allRecipesData={recipesQuery.data ?? []} />
       <View style={styles.latestHeading}>
         <View>
           <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Yeni eklenenler</Text>
