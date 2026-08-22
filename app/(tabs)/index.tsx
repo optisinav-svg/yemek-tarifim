@@ -6,6 +6,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { categories, getCategories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 import { useColors } from "@/hooks/use-colors";
 import { useMemberGate } from "@/components/member-gate";
 
@@ -50,7 +51,7 @@ function CountrySelector() {
               accessibilityRole="button"
               accessibilityLabel={`${country.name} mutfağını seç`}
             >
-              <Text style={styles.countryFlag}>{country.flag}</Text>
+              <CountryFlagIcon code={country.code} size={22} />
               <View style={styles.countryText}>
                 <Text style={[styles.countryName, { color: active ? "#FFFFFF" : colors.foreground }]}>{country.name}</Text>
                 <Text numberOfLines={1} style={[styles.countrySubtitle, { color: active ? "rgba(255,255,255,0.78)" : colors.muted }]}>{country.subtitle}</Text>

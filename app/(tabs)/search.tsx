@@ -5,6 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { useColors } from "@/hooks/use-colors";
 import { getRecipes, categories, countries, type Recipe, type CountryCode } from "@/lib/recipe-data";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 import { useRouter } from "expo-router";
 
 const popularIngredients = ["Domates", "Soğan", "Sarımsak", "Zeytinyağı", "Tavuk", "Yumurta", "Peynir", "Un", "Pirinç", "Mercimek"];
@@ -95,7 +96,7 @@ export default function SearchScreen() {
               onPress={() => setFilterCountry(c.code)}
               style={[styles.filterChip, { backgroundColor: filterCountry === c.code ? colors.primary : colors.surface, borderColor: colors.border }]}
             >
-              <Text style={styles.chipFlag}>{c.flag}</Text>
+              <CountryFlagIcon code={c.code} size={16} />
               <Text style={[styles.filterChipText, { color: filterCountry === c.code ? "#FFFFFF" : colors.foreground }]}>{c.name}</Text>
             </Pressable>
           ))}
@@ -170,7 +171,7 @@ export default function SearchScreen() {
             >
               <View style={styles.cardHeader}>
                 <View style={styles.flagBadge}>
-                  <Text style={styles.flag}>{item.flag}</Text>
+                  <CountryFlagIcon code={item.country} size={16} />
                   <Text style={[styles.countryName, { color: colors.muted }]}>{item.countryName}</Text>
                 </View>
                 <Pressable onPress={() => toggleSaved(item.id)} style={styles.saveBtn}>

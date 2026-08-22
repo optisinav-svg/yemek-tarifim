@@ -6,6 +6,7 @@ import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, St
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { categories, countries } from "@/lib/recipe-data";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 import { useColors } from "@/hooks/use-colors";
 import * as Auth from "@/lib/_core/auth";
 import { trpc } from "@/lib/trpc";
@@ -208,7 +209,7 @@ export default function CreateRecipeScreen() {
                   accessibilityState={{ selected: active }}
                   style={[styles.countryOption, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]}
                 >
-                  <Text style={styles.countryFlag}>{item.flag}</Text>
+                  <CountryFlagIcon code={item.code} size={22} />
                   <View style={styles.countryCopy}>
                     <Text style={[styles.countryName, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.name}</Text>
                     <Text style={[styles.countrySubtitle, { color: active ? "#FFF3E6" : colors.muted }]}>{item.subtitle}</Text>

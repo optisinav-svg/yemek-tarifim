@@ -8,6 +8,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { formatTotalTime, getRecipe, recipeImages, type Recipe } from "@/lib/recipe-data";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "@/shared/const";
@@ -239,7 +240,10 @@ export default function RecipeDetailScreen() {
             </View>
           </View>
           <View style={styles.heroTitleWrap}>
-            <Text style={styles.heroKicker}>{recipe.flag} {recipe.category}{selectedLanguage !== "tr" ? ` · ${SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === selectedLanguage)?.label}` : ""}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center", gap: 6, marginBottom: 4 }}>
+              <CountryFlagIcon code={recipe.country} size={14} />
+              <Text style={styles.heroKicker}>{recipe.category}{selectedLanguage !== "tr" ? ` · ${SUPPORTED_TRANSLATION_LANGUAGES.find((l) => l.code === selectedLanguage)?.label}` : ""}</Text>
+            </View>
             <Text style={styles.heroTitle}>{displayTitle}</Text>
           </View>
         </View>

@@ -9,6 +9,7 @@ import { useAppStore } from "@/lib/app-store";
 import { trpc } from "@/lib/trpc";
 import { useMemberGate } from "@/components/member-gate";
 import { categories, countries, getRecipes, type Recipe } from "@/lib/recipe-data";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 
 const categoryDescriptions: Record<string, string> = {
   Çorbalar: "Sıcak, doyurucu ve sofranın başlangıç lezzetleri",
@@ -146,7 +147,7 @@ export default function GroupsScreen() {
                       accessibilityRole="button"
                       accessibilityLabel={`${country.name} mutfağını seç`}
                     >
-                      <Text style={styles.countryFlag}>{country.flag}</Text>
+                      <CountryFlagIcon code={country.code} size={22} />
                       <View style={styles.countryCopy}>
                         <Text style={[styles.countryName, { color: active ? "#FFFFFF" : colors.foreground }]}>{country.name}</Text>
                         <Text style={[styles.countrySubtitle, { color: active ? "rgba(255,255,255,0.78)" : colors.muted }]}>{country.subtitle}</Text>
