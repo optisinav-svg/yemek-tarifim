@@ -20,6 +20,7 @@ const recipeCountries = countries.filter((country) => country.code !== "ALL");
 export default function CreateRecipeScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { isAuthenticated } = useAuth();
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [tip, setTip] = useState("");

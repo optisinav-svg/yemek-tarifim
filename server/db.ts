@@ -61,6 +61,108 @@ export async function getDb() {
           // Kolon zaten varsa veya eski tablo yapısı farklıysa sorguyu uygulamayı durdurmasın.
         }
       }
+
+      // Diğer tablolar için de aynı güvenlik ağı: eksikse oluştur.
+      // Eski göç (migration) dosyaları farklı bir veritabanı (MySQL) için
+      // yazılmış olduğundan, bazı tablolar (özellikle az kullanılanlar:
+      // audit_logs, content_reports, rate_limit_buckets) gerçek Postgres
+      // veritabanında hiç oluşmamıştı; bu da "relation does not exist"
+      // (42P01) hatalarına yol açıyordu.
+      await _pool.query(`
+        CREATE TABLE IF NOT EXISTS recipes (
+          id SERIAL PRIMARY KEY,
+          "authorId" INTEGER NOT NULL,
+          "countryCode" VARCHAR(8) DEFAULT 'TR' NOT NULL,
+          category VARCHAR(80) NOT NULL,
+          title VARCHAR(160) NOT NULL,
+          summary TEXT,
+          tip TEXT,
+          "imageUrl" TEXT,
+          servings INTEGER DEFAULT 4 NOT NULL,
+          "prepMinutes" INTEGER DEFAULT 0 NOT NULL,
+          "cookMinutes" INTEGER DEFAULT 0 NOT NULL,
+          "ingredientsJson" TEXT NOT NULL,
+          "stepsJson" TEXT NOT NULL,
+          status VARCHAR(50) DEFAULT 'published' NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+          "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS recipe_groups (
+          id SERIAL PRIMARY KEY,
+          "countryCode" VARCHAR(8) NOT NULL,
+          name VARCHAR(80) NOT NULL,
+          "authorId" INTEGER NOT NULL,
+          status VARCHAR(50) DEFAULT 'active' NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS recipe_media (
+          id SERIAL PRIMARY KEY,
+          "recipeId" INTEGER NOT NULL,
+          "authorId" INTEGER NOT NULL,
+          "mediaType" VARCHAR(20) NOT NULL,
+          url TEXT NOT NULL,
+          "mimeType" VARCHAR(100),
+          "sortOrder" INTEGER DEFAULT 0 NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS recipe_comments (
+          id SERIAL PRIMARY KEY,
+          "recipeId" INTEGER NOT NULL,
+          "authorId" INTEGER NOT NULL,
+          body TEXT NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS recipe_attempts (
+          id SERIAL PRIMARY KEY,
+          "recipeId" INTEGER NOT NULL,
+          "authorId" INTEGER NOT NULL,
+          caption TEXT,
+          "mediaUrl" TEXT,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS saved_recipes (
+          id SERIAL PRIMARY KEY,
+          "userId" INTEGER NOT NULL,
+          "recipeId" VARCHAR(60) NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS shopping_items (
+          id SERIAL PRIMARY KEY,
+          "userId" INTEGER NOT NULL,
+          name TEXT NOT NULL,
+          amount TEXT,
+          checked BOOLEAN DEFAULT FALSE NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS rate_limit_buckets (
+          id SERIAL PRIMARY KEY,
+          "bucketKey" VARCHAR(220) NOT NULL UNIQUE,
+          count INTEGER DEFAULT 0 NOT NULL,
+          "resetAt" TIMESTAMP NOT NULL,
+          "updatedAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS audit_logs (
+          id SERIAL PRIMARY KEY,
+          "actorId" INTEGER,
+          action VARCHAR(100) NOT NULL,
+          "entityType" VARCHAR(60) NOT NULL,
+          "entityId" VARCHAR(120),
+          "metadataJson" TEXT,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS content_reports (
+          id SERIAL PRIMARY KEY,
+          "reporterId" INTEGER NOT NULL,
+          "targetType" VARCHAR(60) NOT NULL,
+          "targetId" INTEGER NOT NULL,
+          reason VARCHAR(80) NOT NULL,
+          details VARCHAR(800),
+          status VARCHAR(50) DEFAULT 'pending' NOT NULL,
+          "reviewedBy" INTEGER,
+          "reviewedAt" TIMESTAMP,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+      `);
     } catch (error) {
       console.warn("[Database] Failed to connect:", error);
       _db = null;
