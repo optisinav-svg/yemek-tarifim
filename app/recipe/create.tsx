@@ -8,7 +8,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { categories, countries } from "@/lib/recipe-data";
 import { CountryFlagIcon } from "@/lib/flag-icons";
 import { useColors } from "@/hooks/use-colors";
-import * as Auth from "@/lib/_core/auth";
+import { useAuth } from "@/hooks/use-auth";
 import { trpc } from "@/lib/trpc";
 
 type PendingMedia = { uri: string; mediaType: "image" | "video"; mimeType: "image/jpeg" | "image/png" | "image/webp" | "video/mp4" | "video/quicktime"; fileName: string };
@@ -135,6 +135,14 @@ export default function CreateRecipeScreen() {
   const handleSave = async () => {
     if (!canSave) {
       Alert.alert("Eksik bilgi", "Tarif adı, en az bir malzeme ve bir yapılış adımı ekleyin.");
+      return;
+    }
+    if (!isAuthenticated) {
+      Alert.alert(
+        "Oturum Açılması Gerekir",
+        "Tarif yayınlamak için lütfen önce profil sekmesinden hesabınıza giriş yapın.",
+        [{ text: "Tamam" }]
+      );
       return;
     }
     const formattedIngredients = ingredients

@@ -10,6 +10,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { registerStorageProxy } from "./storageProxy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { seedStarterRecipes } from "../db";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -123,6 +124,7 @@ async function startServer() {
 
   server.listen(port, () => {
     console.log(`[api] server listening on port ${port}`);
+    void seedStarterRecipes().catch((err) => console.error("[Seed] Başlangıç tarifleri eklenemedi:", err));
   });
 }
 

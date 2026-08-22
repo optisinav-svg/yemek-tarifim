@@ -5,8 +5,10 @@ import { RecipeCard } from "@/components/recipe-card";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
-import { categories, getCategories, countries, getRecipes, getCategoryCount, type Recipe } from "@/lib/recipe-data";
+import { categories, getCategories, countries, type Recipe } from "@/lib/recipe-data";
 import { CountryFlagIcon } from "@/lib/flag-icons";
+import { trpc } from "@/lib/trpc";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 import { useColors } from "@/hooks/use-colors";
 import { useMemberGate } from "@/components/member-gate";
 
@@ -88,7 +90,7 @@ function CategoryStrip({ selectedCountry, onCategory, onSeeAll }: { selectedCoun
                 <IconSymbol name={item.icon as never} size={19} color="#FFFFFF" />
               </View>
               <Text style={[styles.categoryName, { color: colors.foreground }]}>{item.name}</Text>
-              <Text style={[styles.categoryCount, { color: colors.muted }]}>{getCategoryCount(item.name, selectedCountry)} tarif</Text>
+              <Text style={[styles.categoryCount, { color: colors.muted }]}>{(recipesQuery.data ?? []).filter((r) => r.category === item.name).length} tarif</Text>
             </Pressable>
           );
         }}
@@ -102,7 +104,12 @@ export default function HomeScreen() {
   const router = useRouter();
   const { selectedCountry } = useAppStore();
   const { requireMember, authModal } = useMemberGate();
-  const latestRecipes = getRecipes(selectedCountry);
+  const recipesQuery = trpc.recipes.list.useQuery(selectedCountry === "ALL" ? undefined : { countryCode: selectedCountry });
+  const latestRecipes = (recipesQuery.data ?? [])
+    .slice()
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 10)
+    .map(adaptServerRecipe);
 
   const renderHeader = () => (
     <View>

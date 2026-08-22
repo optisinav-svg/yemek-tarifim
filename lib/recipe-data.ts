@@ -42,6 +42,7 @@ export const countries = [
 ];
 
 export const baseCategories = [
+  { name: "Kahvaltı", icon: "free-breakfast", color: "#D9A441" },
   { name: "Çorbalar", icon: "soup-kitchen", color: "#E98B3A" },
   { name: "Ana Yemek", icon: "restaurant", color: "#5C8D62" },
   { name: "Salatalar", icon: "eco", color: "#7B9F5B" },

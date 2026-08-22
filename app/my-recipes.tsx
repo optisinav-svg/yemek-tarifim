@@ -5,7 +5,7 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAuth } from "@/hooks/use-auth";
 import { useColors } from "@/hooks/use-colors";
 import { trpc } from "@/lib/trpc";
-import { getRecipes, type Recipe } from "@/lib/recipe-data";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 
 export default function MyRecipesScreen() {
   const colors = useColors();
@@ -13,13 +13,9 @@ export default function MyRecipesScreen() {
   const { user, isAuthenticated } = useAuth();
   const { data: serverRecipes, isLoading } = trpc.recipes.list.useQuery();
 
-  const allRecipes = serverRecipes && serverRecipes.length > 0 ? serverRecipes : getRecipes("TR");
-  const myRecipes = allRecipes.filter((r: Recipe | (Recipe & { author?: { name?: string | null } })) => {
-    if (!r) return false;
-    if (!isAuthenticated) return false;
-    const authorName = "author" in r && r.author ? (r.author as any)?.name : null;
-    return authorName === user?.name || String(r.id).startsWith("custom-");
-  });
+  const myRecipes = isAuthenticated && user
+    ? (serverRecipes ?? []).filter((r) => r.authorId === user.id).map(adaptServerRecipe)
+    : [];
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>

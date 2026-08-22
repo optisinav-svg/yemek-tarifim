@@ -19,6 +19,8 @@ export default function ProfileScreen() {
   const router = useRouter();
   const { colorScheme, setColorScheme } = useThemeContext();
   const { savedRecipeIds } = useAppStore();
+  const myRecipesQuery = trpc.recipes.list.useQuery(undefined, { enabled: isAuthenticated });
+  const myRecipeCount = (myRecipesQuery.data ?? []).filter((r) => r.authorId === user?.id).length;
   const { user, isAuthenticated, loading, logout, refresh } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
@@ -187,7 +189,7 @@ export default function ProfileScreen() {
 
         <View style={styles.stats}>
           <Stat value={String(savedRecipeIds.length)} label="Listemde" colors={colors} />
-          <Stat value="3" label="Tarifim" colors={colors} />
+          <Stat value={String(myRecipeCount)} label="Tarifim" colors={colors} />
           <Stat value="TR" label="Mutfağım" colors={colors} />
         </View>
 

@@ -236,8 +236,66 @@ export async function getRecipeById(id: number) {
 export async function createRecipe(data: InsertRecipe) {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const result = await db.insert(recipes).values(data);
-  return (result as unknown as { insertId: number }).insertId;
+  const result = await db.insert(recipes).values(data).returning({ id: recipes.id });
+  return result[0]?.id;
+}
+
+export async function seedStarterRecipes() {
+  const db = await getDb();
+  if (!db) return;
+
+  const SEED_AUTHOR_OPEN_ID = "system_seed_kitchen";
+  let [seedAuthor] = await db.select().from(users).where(eq(users.openId, SEED_AUTHOR_OPEN_ID)).limit(1);
+  if (!seedAuthor) {
+    const inserted = await db
+      .insert(users)
+      .values({
+        openId: SEED_AUTHOR_OPEN_ID,
+        name: "Gastronotlar Mutfağı",
+        emailVerified: true,
+        loginMethod: "system",
+        role: "user",
+        accountStatus: "active",
+      })
+      .returning();
+    seedAuthor = inserted[0];
+  }
+  if (!seedAuthor) {
+    console.log("[Seed] Sistem yazar hesabı oluşturulamadı, başlangıç tarifleri eklenmedi.");
+    return;
+  }
+
+  const { seedRecipes } = await import("./seed-recipes");
+  let inserted = 0;
+
+  for (const seed of seedRecipes) {
+    const existing = await db
+      .select({ id: recipes.id })
+      .from(recipes)
+      .where(and(eq(recipes.title, seed.title), eq(recipes.category, seed.category)))
+      .limit(1);
+    if (existing.length > 0) continue;
+
+    await db.insert(recipes).values({
+      authorId: seedAuthor.id,
+      countryCode: "TR",
+      category: seed.category,
+      title: seed.title,
+      summary: seed.summary,
+      tip: seed.tip,
+      servings: seed.servings,
+      prepMinutes: seed.prepMinutes,
+      cookMinutes: seed.cookMinutes,
+      ingredientsJson: JSON.stringify(seed.ingredients),
+      stepsJson: JSON.stringify(seed.steps),
+      status: "published",
+    });
+    inserted++;
+  }
+
+  if (inserted > 0) {
+    console.log(`[Seed] ${inserted} başlangıç tarifi eklendi.`);
+  }
 }
 
 export async function createRecipeMedia(data: InsertRecipeMedia) {

@@ -4,8 +4,10 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { useColors } from "@/hooks/use-colors";
-import { getRecipes, categories, countries, type Recipe, type CountryCode } from "@/lib/recipe-data";
+import { categories, countries, type Recipe, type CountryCode } from "@/lib/recipe-data";
 import { CountryFlagIcon } from "@/lib/flag-icons";
+import { trpc } from "@/lib/trpc";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 import { useRouter } from "expo-router";
 
 const popularIngredients = ["Domates", "Soğan", "Sarımsak", "Zeytinyağı", "Tavuk", "Yumurta", "Peynir", "Un", "Pirinç", "Mercimek"];
@@ -27,10 +29,14 @@ export default function SearchScreen() {
     );
   };
 
+  const recipesQuery = trpc.recipes.list.useQuery({
+    countryCode: filterCountry === "ALL" ? undefined : filterCountry,
+    category: selectedCategory === "Tümü" ? undefined : selectedCategory,
+    search: query.trim() || undefined,
+  });
+
   const results = useMemo(() => {
-    const countryParam = filterCountry === "ALL" ? "ALL" : filterCountry;
-    const categoryParam = selectedCategory === "Tümü" ? undefined : selectedCategory;
-    const baseRecipes = getRecipes(countryParam, categoryParam, query.trim() || undefined);
+    const baseRecipes = (recipesQuery.data ?? []).map(adaptServerRecipe);
 
     let filtered = baseRecipes;
 
@@ -56,7 +62,7 @@ export default function SearchScreen() {
     }
 
     return filtered;
-  }, [filterCountry, selectedCategory, query, selectedIngredients, sortByMatch]);
+  }, [recipesQuery.data, selectedIngredients, sortByMatch]);
 
   return (
     <ScreenContainer className="px-5 pt-4" edges={["top", "left", "right"]}>

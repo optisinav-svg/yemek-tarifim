@@ -8,7 +8,7 @@ import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/app-store";
 import { trpc } from "@/lib/trpc";
 import { useMemberGate } from "@/components/member-gate";
-import { categories, countries, getRecipes, type Recipe } from "@/lib/recipe-data";
+import { categories, countries, type Recipe } from "@/lib/recipe-data";
 import { CountryFlagIcon } from "@/lib/flag-icons";
 
 const categoryDescriptions: Record<string, string> = {
@@ -193,9 +193,7 @@ export default function GroupsScreen() {
           </View>
         }
         renderItem={({ item }) => {
-          const count = item.isCustom
-            ? (serverRecipesQuery.data ?? []).filter((recipe: Pick<Recipe, "category">) => recipe.category === item.name).length
-            : getRecipes(selectedCountry, item.name).length;
+          const count = (serverRecipesQuery.data ?? []).filter((recipe) => recipe.category === item.name).length;
           return (
             <Pressable
               onPress={() => router.push({ pathname: "/group/[category]", params: { category: item.name, countryCode: selectedCountry } })}

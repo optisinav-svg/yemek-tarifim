@@ -42,6 +42,7 @@ const MAPPING = {
   "public": "public",
   "category": "category",
   "soup-kitchen": "soup-kitchen",
+  "free-breakfast": "free-breakfast",
   "eco": "eco",
   "cake": "cake",
   "bakery-dining": "bakery-dining",

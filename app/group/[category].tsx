@@ -5,8 +5,10 @@ import { RecipeCard } from "@/components/recipe-card";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
-import { categories, getRecipes, type Recipe } from "@/lib/recipe-data";
+import { categories, type Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 
 export default function CategoryScreen() {
   const colors = useColors();
@@ -14,8 +16,12 @@ export default function CategoryScreen() {
   const { category } = useLocalSearchParams<{ category?: string }>();
   const { selectedCountry } = useAppStore();
   const selectedCategory = category && category !== "Tümü" ? category : undefined;
-  const list = getRecipes(selectedCountry, selectedCategory);
-  const count = categories.find((item) => item.name === selectedCategory)?.count ?? list.length;
+  const recipesQuery = trpc.recipes.list.useQuery({
+    countryCode: selectedCountry === "ALL" ? undefined : selectedCountry,
+    category: selectedCategory,
+  });
+  const list = (recipesQuery.data ?? []).map(adaptServerRecipe);
+  const count = list.length;
 
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
