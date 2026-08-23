@@ -8,6 +8,15 @@ export function resolveAssetUrl(url: string) {
   return `${baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
+const PLACEHOLDER_IMAGES = [recipeImages.mercimek, recipeImages.manti, recipeImages.zeytinyagli];
+
+/** Fotoğrafı olmayan tarifler için, hepsi aynı görsele düşmesin diye
+ * elimizdeki birkaç örnek fotoğraf arasında dönüşümlü bir seçim yapar. */
+function placeholderImageFor(id: number) {
+  const index = Math.abs(id) % PLACEHOLDER_IMAGES.length;
+  return PLACEHOLDER_IMAGES[index];
+}
+
 /** Sunucudan (trpc.recipes.list / byId) gelen ham tarifi, uygulamanın her
  * yerde kullandığı yerel `Recipe` biçimine çevirir. */
 export function adaptServerRecipe(server: {
@@ -62,7 +71,7 @@ export function adaptServerRecipe(server: {
     country,
     countryName: countryMeta.name,
     flag: countryMeta.flag,
-    image: server.imageUrl ? { uri: resolveAssetUrl(server.imageUrl) } : recipeImages.mercimek,
+    image: server.imageUrl ? { uri: resolveAssetUrl(server.imageUrl) } : placeholderImageFor(server.id),
     author: "Topluluk üyesi",
     authorAvatar: "TY",
     prepMinutes: server.prepMinutes,

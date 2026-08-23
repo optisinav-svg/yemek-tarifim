@@ -1,6 +1,6 @@
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Alert, Image, KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 
 import { ScreenContainer } from "@/components/screen-container";
@@ -20,7 +20,13 @@ const recipeCountries = countries.filter((country) => country.code !== "ALL");
 export default function CreateRecipeScreen() {
   const colors = useColors();
   const router = useRouter();
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, user } = useAuth();
+  const { editId } = useLocalSearchParams<{ editId?: string }>();
+  const isEditMode = Boolean(editId) && Number.isInteger(Number(editId));
+  const existingRecipeQuery = trpc.recipes.byId.useQuery(
+    { id: Number(editId) },
+    { enabled: isEditMode },
+  );
   const [title, setTitle] = useState("");
   const [summary, setSummary] = useState("");
   const [tip, setTip] = useState("");
@@ -32,6 +38,37 @@ export default function CreateRecipeScreen() {
   const [ingredients, setIngredients] = useState(defaultIngredients);
   const [steps, setSteps] = useState(defaultSteps);
   const [media, setMedia] = useState<PendingMedia[]>([]);
+  const [didPrefill, setDidPrefill] = useState(false);
+
+  useEffect(() => {
+    if (!isEditMode || didPrefill || !existingRecipeQuery.data) return;
+    const r = existingRecipeQuery.data;
+    setTitle(r.title);
+    setSummary(r.summary ?? "");
+    setTip(r.tip ?? "");
+    setCategory(r.category);
+    setCountryCode(r.countryCode);
+    setServings(String(r.servings));
+    setPrepMinutes(String(r.prepMinutes));
+    setCookMinutes(String(r.cookMinutes));
+    try {
+      const rawIngredients = r.ingredients as unknown;
+      if (Array.isArray(rawIngredients) && rawIngredients.length > 0) {
+        setIngredients(
+          rawIngredients.map((item) => {
+            const rec = typeof item === "object" && item !== null ? (item as Record<string, unknown>) : {};
+            return [rec.amount, rec.unit, rec.name].filter(Boolean).join(" ");
+          }),
+        );
+      }
+    } catch {
+      // yoksay, varsayılan boş malzeme listesiyle devam et
+    }
+    const rawSteps = r.steps as unknown;
+    if (Array.isArray(rawSteps) && rawSteps.length > 0) setSteps(rawSteps.map((s) => String(s)));
+    setDidPrefill(true);
+  }, [isEditMode, didPrefill, existingRecipeQuery.data]);
+  const canEditThisRecipe = !isEditMode || (existingRecipeQuery.data && user && existingRecipeQuery.data.authorId === user.id);
   const customGroupsQuery = trpc.groups.list.useQuery({ countryCode }, { staleTime: 30_000 });
   const availableCategories = useMemo(() => {
     const builtInNames = new Set(categories.map((item) => item.name));
@@ -54,10 +91,27 @@ export default function CreateRecipeScreen() {
       Alert.alert("Hata", err.message || "Tarif kaydedilemedi. Lütfen giriş yaptığınızdan emin olun.");
     },
   });
-  const isBusy = createMutation.isPending || uploadMediaMutation.isPending || ocrMutation.isPending;
+  const updateMutation = trpc.recipes.update.useMutation({
+    onSuccess: () => {
+      void utils.recipes.list.invalidate();
+      void utils.recipes.byId.invalidate({ id: Number(editId) });
+      Alert.alert("Başarılı", "Tarifiniz güncellendi.", [{ text: "Tamam", onPress: () => router.back() }]);
+    },
+    onError: (err) => {
+      Alert.alert("Hata", err.message || "Tarif güncellenemedi.");
+    },
+  });
+  const isBusy = createMutation.isPending || updateMutation.isPending || uploadMediaMutation.isPending || ocrMutation.isPending;
   const canSave = title.trim().length > 2 && ingredients.some((item) => item.trim()) && steps.some((item) => item.trim()) && !isBusy;
 
   const updateIngredient = (index: number, value: string) => setIngredients((current) => current.map((item, itemIndex) => itemIndex === index ? value : item));
+  const moveIngredient = (index: number, direction: -1 | 1) => setIngredients((current) => {
+    const target = index + direction;
+    if (target < 0 || target >= current.length) return current;
+    const next = [...current];
+    [next[index], next[target]] = [next[target], next[index]];
+    return next;
+  });
   const updateStep = (index: number, value: string) => setSteps((current) => current.map((item, itemIndex) => itemIndex === index ? value : item));
   const addIngredient = () => setIngredients((current) => [...current, ""]);
   const addStep = () => setSteps((current) => [...current, ""]);
@@ -156,15 +210,6 @@ export default function CreateRecipeScreen() {
         return { name: name || item.trim(), amount, unit };
       });
 
-    const token = await Auth.getSessionToken();
-    if (!token) {
-      Alert.alert(
-        "Oturum Açılması Gerekir",
-        "Tarif yayınlamak için lütfen önce profil sekmesinden hesabınıza giriş yapın veya demo hesabı aktif edin.",
-        [{ text: "Tamam" }]
-      );
-      return;
-    }
     try {
       const uploadedMedia = [];
       for (const item of media) {
@@ -172,7 +217,7 @@ export default function CreateRecipeScreen() {
         const uploaded = await uploadMediaMutation.mutateAsync({ dataBase64, fileName: item.fileName, mimeType: item.mimeType, mediaType: item.mediaType });
         uploadedMedia.push({ url: uploaded.url, mediaType: item.mediaType, mimeType: item.mimeType, sortOrder: uploadedMedia.length });
       }
-      await createMutation.mutateAsync({
+      const payload = {
         countryCode,
         category,
         title: title.trim(),
@@ -185,7 +230,12 @@ export default function CreateRecipeScreen() {
         steps: steps.filter((step) => step.trim().length > 0),
         media: uploadedMedia,
         imageUrl: uploadedMedia[0]?.url,
-      });
+      };
+      if (isEditMode) {
+        await updateMutation.mutateAsync({ ...payload, id: Number(editId) });
+      } else {
+        await createMutation.mutateAsync(payload);
+      }
     } catch (error) {
       Alert.alert("Yükleme başarısız", error instanceof Error ? error.message : "Medya veya tarif kaydedilemedi.");
     }
@@ -195,7 +245,7 @@ export default function CreateRecipeScreen() {
     <ScreenContainer edges={["top", "left", "right"]}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled" showsVerticalScrollIndicator={false}>
-          <View style={styles.topBar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="arrow-left" size={21} color={colors.foreground} /></Pressable><View style={styles.heading}><Text style={[styles.kicker, { color: colors.primary }]}>YENİ TARİF</Text><Text style={[styles.title, { color: colors.foreground }]}>Tarifini paylaş</Text></View><Text style={[styles.timeTotal, { color: colors.muted }]}>{total} dk</Text></View>
+          <View style={styles.topBar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="arrow-left" size={21} color={colors.foreground} /></Pressable><View style={styles.heading}><Text style={[styles.kicker, { color: colors.primary }]}>{isEditMode ? "TARİFİ DÜZENLE" : "YENİ TARİF"}</Text><Text style={[styles.title, { color: colors.foreground }]}>{isEditMode ? "Tarifini güncelle" : "Tarifini paylaş"}</Text></View><Text style={[styles.timeTotal, { color: colors.muted }]}>{total} dk</Text></View>
           <Field label="Tarif adı" value={title} onChangeText={setTitle} placeholder="Örn. Fırında sebzeli köfte" colors={colors} />
           <Field label="Kısa açıklama" value={summary} onChangeText={setSummary} placeholder="Bu tarifi özel yapan nedir?" colors={colors} multiline />
           <Field label="Püf noktası" value={tip} onChangeText={setTip} placeholder="Tarifin inceliğini ve dikkat edilmesi gerekenleri yazın" colors={colors} multiline />
@@ -233,7 +283,12 @@ export default function CreateRecipeScreen() {
           <View style={styles.categoryWrap}>{availableCategories.map((item) => { const active = category === item.name; return <Pressable key={item.name} onPress={() => setCategory(item.name)} style={[styles.category, { backgroundColor: active ? colors.primary : colors.surface, borderColor: active ? colors.primary : colors.border }]}><Text style={[styles.categoryText, { color: active ? "#FFFFFF" : colors.foreground }]}>{item.name}</Text></Pressable>; })}</View>
           <View style={styles.twoFields}><Field label="Porsiyon" value={servings} onChangeText={setServings} placeholder="4" colors={colors} keyboardType="number-pad" compact /><Field label="Hazırlama (dk)" value={prepMinutes} onChangeText={setPrepMinutes} placeholder="20" colors={colors} keyboardType="number-pad" compact /><Field label="Pişirme (dk)" value={cookMinutes} onChangeText={setCookMinutes} placeholder="30" colors={colors} keyboardType="number-pad" compact /></View>
           <SectionLabel title="Malzemeler" hint="Miktar ve birimiyle yaz" colors={colors} />
-          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{ingredients.map((ingredient, index) => <View key={index} style={styles.listRow}><Text style={[styles.rowNumber, { color: colors.primary }]}>{index + 1}</Text><TextInput value={ingredient} onChangeText={(value) => updateIngredient(index, value)} placeholder="Örn. 2 su bardağı un" placeholderTextColor={colors.muted} style={[styles.listInput, { color: colors.foreground }]} returnKeyType="next" />{ingredients.length > 1 && <Pressable onPress={() => setIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addIngredient} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Malzeme ekle</Text></Pressable></View>
+          <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{ingredients.map((ingredient, index) => <View key={index} style={[styles.listRow, { borderBottomColor: colors.border, borderBottomWidth: index < ingredients.length - 1 ? 1 : 0 }]}><Text style={[styles.rowNumber, { color: colors.primary }]}>{index + 1}</Text><TextInput value={ingredient} onChangeText={(value) => updateIngredient(index, value)} placeholder="Örn. 2 su bardağı un" placeholderTextColor={colors.muted} style={[styles.listInput, { color: colors.foreground, backgroundColor: colors.background, borderColor: colors.border }]} returnKeyType="next" multiline />
+            <View style={styles.reorderGroup}>
+              <Pressable disabled={index === 0} onPress={() => moveIngredient(index, -1)} style={styles.reorderBtn}><IconSymbol name="chevron.up" size={16} color={index === 0 ? colors.border : colors.muted} /></Pressable>
+              <Pressable disabled={index === ingredients.length - 1} onPress={() => moveIngredient(index, 1)} style={styles.reorderBtn}><IconSymbol name="chevron.down" size={16} color={index === ingredients.length - 1 ? colors.border : colors.muted} /></Pressable>
+            </View>
+            {ingredients.length > 1 && <Pressable onPress={() => setIngredients((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addIngredient} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Malzeme ekle</Text></Pressable></View>
           <SectionLabel title="Yapılışı" hint="Adımları sırayla yaz" colors={colors} />
           <View style={[styles.listCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>{steps.map((step, index) => <View key={index} style={styles.stepInputRow}><View style={[styles.stepNumber, { backgroundColor: colors.primary }]}><Text style={styles.stepNumberText}>{index + 1}</Text></View><TextInput value={step} onChangeText={(value) => updateStep(index, value)} placeholder="Bu adımda ne yapılır?" placeholderTextColor={colors.muted} style={[styles.stepInput, { color: colors.foreground }]} multiline />{steps.length > 1 && <Pressable onPress={() => setSteps((current) => current.filter((_, itemIndex) => itemIndex !== index))}><IconSymbol name="delete" size={18} color={colors.muted} /></Pressable>}</View>)}<Pressable onPress={addStep} style={[styles.addLine, { borderTopColor: colors.border }]}><IconSymbol name="add" size={17} color={colors.primary} /><Text style={[styles.addLineText, { color: colors.primary }]}>Adım ekle</Text></Pressable></View>
           <View style={styles.mediaSection}>
@@ -243,7 +298,7 @@ export default function CreateRecipeScreen() {
               <Pressable onPress={() => void pickMedia()} disabled={media.length >= 3} style={[styles.mediaPicker, { borderColor: colors.border, opacity: media.length >= 3 ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraf veya video seç"><IconSymbol name="add" size={18} color={colors.primary} /><Text style={[styles.mediaPickerText, { color: colors.primary }]}>{media.length > 0 ? "Başka medya ekle" : "Galeriden fotoğraf veya video seç"}</Text></Pressable>
             </View>
           </View>
-          <Pressable onPress={() => void handleSave()} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>{uploadMediaMutation.isPending ? "Medya yükleniyor..." : createMutation.isPending ? "Yayınlanıyor..." : "Tarifi yayınla"}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
+          <Pressable onPress={() => void handleSave()} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>{uploadMediaMutation.isPending ? "Medya yükleniyor..." : (createMutation.isPending || updateMutation.isPending) ? (isEditMode ? "Güncelleniyor..." : "Yayınlanıyor...") : (isEditMode ? "Değişiklikleri Kaydet" : "Tarifi yayınla")}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>
@@ -260,4 +315,4 @@ function Field({ label, value, onChangeText, placeholder, colors, multiline, key
 }
 function SectionLabel({ title, hint, colors }: { title: string; hint: string; colors: ReturnType<typeof useColors> }) { return <View style={styles.sectionLabel}><Text style={[styles.sectionTitle, { color: colors.foreground }]}>{title}</Text><Text style={[styles.sectionHint, { color: colors.muted }]}>{hint}</Text></View>; }
 
-const styles = StyleSheet.create({ content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 45 }, topBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingBottom: 22 }, backButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 }, heading: { flex: 1 }, kicker: { fontSize: 10, letterSpacing: 1.3, fontWeight: "800" }, title: { marginTop: 3, fontSize: 26, fontWeight: "900" }, timeTotal: { fontSize: 12, fontWeight: "800" }, field: { marginBottom: 15 }, compactField: { flex: 1 }, ocrCard: { borderWidth: 1, borderRadius: 17, marginBottom: 17, padding: 11 }, ocrAction: { flexDirection: "row", alignItems: "center", gap: 10 }, ocrIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 12 }, ocrCopy: { flex: 1 }, ocrTitle: { fontSize: 13, fontWeight: "900" }, ocrText: { marginTop: 3, fontSize: 11, lineHeight: 16, fontWeight: "600" }, label: { marginBottom: 7, fontSize: 12, fontWeight: "800" }, input: { minHeight: 49, borderWidth: 1, borderRadius: 14, paddingHorizontal: 13, fontSize: 13, fontWeight: "600" }, multiline: { minHeight: 83, paddingTop: 12, textAlignVertical: "top" }, countryWrap: { gap: 8, marginBottom: 6 }, countryOption: { flexDirection: "row", alignItems: "center", minHeight: 68, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, gap: 11 }, countryFlag: { fontSize: 25 }, countryCopy: { flex: 1 }, countryName: { fontSize: 13, fontWeight: "900" }, countrySubtitle: { marginTop: 3, fontSize: 11, fontWeight: "600" }, countryHint: { marginBottom: 17, fontSize: 11, fontWeight: "600" }, categoryWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 17 }, category: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 }, categoryText: { fontSize: 11, fontWeight: "800" }, twoFields: { flexDirection: "row", gap: 8 }, sectionLabel: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 5, marginBottom: 9 }, sectionTitle: { fontSize: 19, fontWeight: "900" }, sectionHint: { fontSize: 11, fontWeight: "700" }, listCard: { overflow: "hidden", borderWidth: 1, borderRadius: 17, paddingHorizontal: 13 }, listRow: { flexDirection: "row", alignItems: "center", minHeight: 51, gap: 9, borderBottomWidth: 0 }, rowNumber: { width: 20, fontSize: 12, fontWeight: "900" }, listInput: { flex: 1, fontSize: 13, fontWeight: "600" }, addLine: { flexDirection: "row", alignItems: "center", gap: 6, borderTopWidth: 1, paddingVertical: 13 }, addLineText: { fontSize: 12, fontWeight: "900" }, stepInputRow: { flexDirection: "row", alignItems: "flex-start", minHeight: 68, gap: 9, paddingVertical: 9 }, stepNumber: { width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: 12, marginTop: 4 }, stepNumberText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" }, stepInput: { flex: 1, minHeight: 48, paddingTop: 7, fontSize: 13, lineHeight: 19, fontWeight: "600", textAlignVertical: "top" }, mediaSection: { marginTop: 22 }, mediaSectionHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 }, mediaCount: { fontSize: 11, fontWeight: "900" }, mediaTitle: { fontSize: 13, fontWeight: "900" }, mediaText: { marginTop: 3, fontSize: 11, fontWeight: "600" }, mediaCard: { borderWidth: 1, borderRadius: 17, padding: 10 }, mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }, mediaTile: { position: "relative", width: "31.5%", aspectRatio: 1, overflow: "hidden", borderRadius: 12 }, mediaPreview: { width: "100%", height: "100%" }, videoPreview: { flex: 1, alignItems: "center", justifyContent: "center" }, videoLabel: { marginTop: 4, fontSize: 10, fontWeight: "900" }, removeMedia: { position: "absolute", top: 5, right: 5, alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12 }, mediaPicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 45, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }, mediaPickerText: { fontSize: 12, fontWeight: "900" }, saveButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, marginTop: 18, paddingVertical: 15 }, saveText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" } });
+const styles = StyleSheet.create({ content: { paddingHorizontal: 20, paddingTop: 18, paddingBottom: 45 }, topBar: { flexDirection: "row", alignItems: "center", gap: 12, paddingBottom: 22 }, backButton: { width: 42, height: 42, alignItems: "center", justifyContent: "center", borderRadius: 14, borderWidth: 1 }, heading: { flex: 1 }, kicker: { fontSize: 10, letterSpacing: 1.3, fontWeight: "800" }, title: { marginTop: 3, fontSize: 26, fontWeight: "900" }, timeTotal: { fontSize: 12, fontWeight: "800" }, field: { marginBottom: 15 }, compactField: { flex: 1 }, ocrCard: { borderWidth: 1, borderRadius: 17, marginBottom: 17, padding: 11 }, ocrAction: { flexDirection: "row", alignItems: "center", gap: 10 }, ocrIcon: { width: 38, height: 38, alignItems: "center", justifyContent: "center", borderRadius: 12 }, ocrCopy: { flex: 1 }, ocrTitle: { fontSize: 13, fontWeight: "900" }, ocrText: { marginTop: 3, fontSize: 11, lineHeight: 16, fontWeight: "600" }, label: { marginBottom: 7, fontSize: 12, fontWeight: "800" }, input: { minHeight: 49, borderWidth: 1, borderRadius: 14, paddingHorizontal: 13, fontSize: 13, fontWeight: "600" }, multiline: { minHeight: 83, paddingTop: 12, textAlignVertical: "top" }, countryWrap: { gap: 8, marginBottom: 6 }, countryOption: { flexDirection: "row", alignItems: "center", minHeight: 68, borderWidth: 1, borderRadius: 16, paddingHorizontal: 13, gap: 11 }, countryFlag: { fontSize: 25 }, countryCopy: { flex: 1 }, countryName: { fontSize: 13, fontWeight: "900" }, countrySubtitle: { marginTop: 3, fontSize: 11, fontWeight: "600" }, countryHint: { marginBottom: 17, fontSize: 11, fontWeight: "600" }, categoryWrap: { flexDirection: "row", flexWrap: "wrap", gap: 7, marginBottom: 17 }, category: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 10, paddingVertical: 8 }, categoryText: { fontSize: 11, fontWeight: "800" }, twoFields: { flexDirection: "row", gap: 8 }, sectionLabel: { flexDirection: "row", alignItems: "baseline", justifyContent: "space-between", marginTop: 5, marginBottom: 9 }, sectionTitle: { fontSize: 19, fontWeight: "900" }, sectionHint: { fontSize: 11, fontWeight: "700" }, listCard: { overflow: "hidden", borderWidth: 1, borderRadius: 17, paddingHorizontal: 13 }, listRow: { flexDirection: "row", alignItems: "center", minHeight: 64, gap: 9, paddingVertical: 8, borderBottomWidth: 0 }, rowNumber: { width: 20, fontSize: 12, fontWeight: "900" }, listInput: { flex: 1, fontSize: 15, fontWeight: "600", minHeight: 46, borderWidth: 1, borderRadius: 12, paddingHorizontal: 12, paddingVertical: 10 }, reorderGroup: { flexDirection: "column" }, reorderBtn: { paddingVertical: 3, paddingHorizontal: 4 }, addLine: { flexDirection: "row", alignItems: "center", gap: 6, borderTopWidth: 1, paddingVertical: 13 }, addLineText: { fontSize: 12, fontWeight: "900" }, stepInputRow: { flexDirection: "row", alignItems: "flex-start", minHeight: 68, gap: 9, paddingVertical: 9 }, stepNumber: { width: 24, height: 24, alignItems: "center", justifyContent: "center", borderRadius: 12, marginTop: 4 }, stepNumberText: { color: "#FFFFFF", fontSize: 11, fontWeight: "900" }, stepInput: { flex: 1, minHeight: 48, paddingTop: 7, fontSize: 15, lineHeight: 21, fontWeight: "600", textAlignVertical: "top" }, mediaSection: { marginTop: 22 }, mediaSectionHeader: { flexDirection: "row", alignItems: "flex-end", justifyContent: "space-between", marginBottom: 9 }, mediaCount: { fontSize: 11, fontWeight: "900" }, mediaTitle: { fontSize: 13, fontWeight: "900" }, mediaText: { marginTop: 3, fontSize: 11, fontWeight: "600" }, mediaCard: { borderWidth: 1, borderRadius: 17, padding: 10 }, mediaGrid: { flexDirection: "row", flexWrap: "wrap", gap: 8, marginBottom: 10 }, mediaTile: { position: "relative", width: "31.5%", aspectRatio: 1, overflow: "hidden", borderRadius: 12 }, mediaPreview: { width: "100%", height: "100%" }, videoPreview: { flex: 1, alignItems: "center", justifyContent: "center" }, videoLabel: { marginTop: 4, fontSize: 10, fontWeight: "900" }, removeMedia: { position: "absolute", top: 5, right: 5, alignItems: "center", justifyContent: "center", width: 24, height: 24, borderRadius: 12 }, mediaPicker: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 7, minHeight: 45, borderWidth: 1, borderStyle: "dashed", borderRadius: 12 }, mediaPickerText: { fontSize: 12, fontWeight: "900" }, saveButton: { flexDirection: "row", alignItems: "center", justifyContent: "center", gap: 8, borderRadius: 16, marginTop: 18, paddingVertical: 15 }, saveText: { color: "#FFFFFF", fontSize: 13, fontWeight: "900" } });

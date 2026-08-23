@@ -8,12 +8,20 @@ import { IconSymbol } from "@/components/ui/icon-symbol";
 import { getRecipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
 import { formatTimer, useKitchenTimer } from "@/lib/kitchen-timer";
+import { trpc } from "@/lib/trpc";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 
 export default function CookingModeScreen() {
   const colors = useColors();
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id?: string }>();
-  const recipe = getRecipe(id || "");
+  const localRecipe = getRecipe(id || "");
+  const numericId = Number(id);
+  const serverRecipeQuery = trpc.recipes.byId.useQuery(
+    { id: numericId },
+    { enabled: !localRecipe && Number.isInteger(numericId) && numericId > 0 },
+  );
+  const recipe = localRecipe ?? (serverRecipeQuery.data ? adaptServerRecipe(serverRecipeQuery.data) : undefined);
   const [stepIndex, setStepIndex] = useState(0);
   const [voiceListening, setVoiceListening] = useState(false);
   const [lastCommand, setLastCommand] = useState("");
@@ -76,7 +84,7 @@ export default function CookingModeScreen() {
     }
   }, [recipe]);
 
-  if (!recipe) return <ScreenContainer className="items-center justify-center"><Text style={[styles.title, { color: colors.foreground }]}>Tarif bulunamadı.</Text></ScreenContainer>;
+  if (!recipe) return <ScreenContainer className="items-center justify-center"><Text style={[styles.title, { color: colors.foreground }]}>{serverRecipeQuery.isLoading ? "Tarif yükleniyor..." : "Tarif bulunamadı."}</Text></ScreenContainer>;
 
   const addTimer = async (minutes: number) => {
     const nextSeconds = remainingSeconds + minutes * 60;

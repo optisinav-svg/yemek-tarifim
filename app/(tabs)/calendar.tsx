@@ -8,7 +8,7 @@ import { useMemberGate, MemberRequiredView } from "@/components/member-gate";
 import { useColors } from "@/hooks/use-colors";
 import { useAppStore } from "@/lib/app-store";
 import { buildGoogleCalendarLink } from "@/lib/calendar-link";
-import { MEAL_SLOTS, MEAL_SLOT_LABELS, useMealPlan, type MealSlot } from "@/lib/meal-plan-store";
+import { MEAL_SLOTS, MEAL_SLOT_LABELS, MAX_ENTRIES_PER_SLOT, useMealPlan, type MealSlot } from "@/lib/meal-plan-store";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { recipeImages, type Recipe } from "@/lib/recipe-data";
@@ -50,7 +50,7 @@ export default function CalendarScreen() {
   const colors = useColors();
   const router = useRouter();
   const { isAuthenticated, loading, requireMember, authModal } = useMemberGate();
-  const { getEntry, setEntry, updateServings, removeEntry, getWeekEntries, isReady } = useMealPlan();
+  const { getEntries, addEntry, updateServings, removeEntry, getWeekEntries, isReady } = useMealPlan();
   const { addRecipeToShopping } = useAppStore();
 
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
@@ -170,7 +170,7 @@ export default function CalendarScreen() {
         {weekDates.map((date, index) => {
           const isSelected = index === selectedDayIndex;
           const dateKey = toDateKey(date);
-          const hasEntries = MEAL_SLOTS.some((slot) => getEntry(dateKey, slot));
+          const hasEntries = MEAL_SLOTS.some((slot) => getEntries(dateKey, slot).length > 0);
           return (
             <Pressable key={dateKey} onPress={() => setSelectedDayIndex(index)} style={[styles.dayChip, { backgroundColor: isSelected ? colors.primary : colors.surface, borderColor: colors.border }]}>
               <Text style={[styles.dayChipLabel, { color: isSelected ? "#FFFFFF" : colors.muted }]}>{DAY_LABELS[index]}</Text>
@@ -185,32 +185,36 @@ export default function CalendarScreen() {
 
       <ScrollView contentContainerStyle={styles.slotList}>
         {MEAL_SLOTS.map((slot) => {
-          const entry = getEntry(selectedDateKey, slot);
+          const slotEntries = getEntries(selectedDateKey, slot);
           return (
             <View key={slot} style={[styles.slotCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-              <Text style={[styles.slotLabel, { color: colors.muted }]}>{MEAL_SLOT_LABELS[slot]}</Text>
-              {entry ? (
-                <View>
+              <View style={styles.slotHeaderRow}>
+                <Text style={[styles.slotLabel, { color: colors.muted }]}>{MEAL_SLOT_LABELS[slot]}</Text>
+                <Text style={[styles.slotLabel, { color: colors.muted }]}>{slotEntries.length}/{MAX_ENTRIES_PER_SLOT}</Text>
+              </View>
+              {slotEntries.map((entry) => (
+                <View key={entry.id} style={styles.entryBlock}>
                   <Text style={[styles.slotRecipeTitle, { color: colors.foreground }]} numberOfLines={2}>{entry.recipeTitle}</Text>
                   <View style={styles.slotRow}>
                     <View style={[styles.servingStepper, { borderColor: colors.border }]}>
-                      <Pressable onPress={() => updateServings(selectedDateKey, slot, entry.servings - 1)} style={styles.stepBtn}><Text style={{ color: colors.foreground, fontWeight: "800" }}>−</Text></Pressable>
+                      <Pressable onPress={() => updateServings(selectedDateKey, slot, entry.id, entry.servings - 1)} style={styles.stepBtn}><Text style={{ color: colors.foreground, fontWeight: "800" }}>−</Text></Pressable>
                       <Text style={{ color: colors.foreground, fontWeight: "700", minWidth: 22, textAlign: "center" }}>{entry.servings}</Text>
-                      <Pressable onPress={() => updateServings(selectedDateKey, slot, entry.servings + 1)} style={styles.stepBtn}><Text style={{ color: colors.foreground, fontWeight: "800" }}>+</Text></Pressable>
+                      <Pressable onPress={() => updateServings(selectedDateKey, slot, entry.id, entry.servings + 1)} style={styles.stepBtn}><Text style={{ color: colors.foreground, fontWeight: "800" }}>+</Text></Pressable>
                     </View>
                     <Pressable onPress={() => Linking.openURL(buildGoogleCalendarLink({ date: selectedDateKey, slot, recipeTitle: entry.recipeTitle, servings: entry.servings }))} style={[styles.smallBtn, { backgroundColor: colors.background, borderColor: colors.border }]}>
                       <IconSymbol name="calendar" size={14} color={colors.foreground} />
                       <Text style={{ color: colors.foreground, fontSize: 12, fontWeight: "700" }}>Google Takvim</Text>
                     </Pressable>
-                    <Pressable onPress={() => removeEntry(selectedDateKey, slot)} style={[styles.smallBtn, { backgroundColor: colors.background, borderColor: colors.border }]}>
+                    <Pressable onPress={() => removeEntry(selectedDateKey, slot, entry.id)} style={[styles.smallBtn, { backgroundColor: colors.background, borderColor: colors.border }]}>
                       <IconSymbol name="close" size={14} color={colors.error} />
                     </Pressable>
                   </View>
                 </View>
-              ) : (
+              ))}
+              {slotEntries.length < MAX_ENTRIES_PER_SLOT && (
                 <Pressable onPress={() => { setPickerSlot(slot); setPickerSearch(""); }} style={[styles.addBtn, { borderColor: colors.primary }]}>
                   <IconSymbol name="add" size={16} color={colors.primary} />
-                  <Text style={{ color: colors.primary, fontWeight: "700" }}>Tarif Seç</Text>
+                  <Text style={{ color: colors.primary, fontWeight: "700" }}>Tarif Seç{slotEntries.length > 0 ? ` (${slotEntries.length}/${MAX_ENTRIES_PER_SLOT})` : ""}</Text>
                 </Pressable>
               )}
             </View>
@@ -252,7 +256,7 @@ export default function CalendarScreen() {
                 renderItem={({ item }) => (
                   <Pressable
                     onPress={() => {
-                      setEntry(selectedDateKey, pickerSlot, { id: String(item.id), title: item.title }, item.servings || 2);
+                      addEntry(selectedDateKey, pickerSlot, { id: String(item.id), title: item.title }, item.servings || 2);
                       setPickerSlot(null);
                     }}
                     style={[styles.pickerItem, { borderColor: colors.border }]}
@@ -284,7 +288,9 @@ const styles = StyleSheet.create({
   selectedDateText: { paddingHorizontal: 20, fontSize: 13, fontWeight: "700", marginBottom: 6 },
   slotList: { paddingHorizontal: 16, paddingBottom: 30, gap: 10 },
   slotCard: { borderRadius: 16, borderWidth: 1, padding: 14 },
-  slotLabel: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.4, marginBottom: 8 },
+  slotHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
+  entryBlock: { marginBottom: 10 },
+  slotLabel: { fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 0.4 },
   slotRecipeTitle: { fontSize: 16, fontWeight: "800", marginBottom: 10 },
   slotRow: { flexDirection: "row", alignItems: "center", gap: 8 },
   servingStepper: { flexDirection: "row", alignItems: "center", borderWidth: 1, borderRadius: 10, paddingHorizontal: 6 },

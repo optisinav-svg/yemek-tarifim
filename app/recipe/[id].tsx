@@ -11,6 +11,7 @@ import { formatTotalTime, getRecipe, recipeImages, type Recipe } from "@/lib/rec
 import { CountryFlagIcon } from "@/lib/flag-icons";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
+import { useAuth } from "@/hooks/use-auth";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "@/shared/const";
 import { formatIngredient } from "@/lib/recipe-utils";
 import { useColors } from "@/hooks/use-colors";
@@ -107,6 +108,7 @@ function toDisplayRecipe(serverRecipe: ServerRecipeResponse, fallback: Recipe | 
 export default function RecipeDetailScreen() {
   const colors = useColors();
   const router = useRouter();
+  const { user } = useAuth();
   const { id } = useLocalSearchParams<{ id?: string }>();
   const localRecipe = getRecipe(id || "");
   const serverId = Number(id);
@@ -219,6 +221,7 @@ export default function RecipeDetailScreen() {
   const displayTip = activeTranslation?.tip || recipe.tip;
   const displaySteps = activeTranslation?.steps?.length ? activeTranslation.steps : recipe.steps;
   const isTranslating = translateMutation.isPending;
+  const isOwner = Boolean(user && serverRecipeQuery.data && serverRecipeQuery.data.authorId === user.id);
 
   const saved = savedRecipeIds.includes(recipe.id);
   const totalTime = formatTotalTime(recipe);
@@ -232,6 +235,11 @@ export default function RecipeDetailScreen() {
           <View style={styles.heroActions}>
             <Pressable onPress={() => router.back()} style={styles.heroButton} accessibilityLabel="Geri dön"><IconSymbol name="arrow-left" size={21} color="#FFFFFF" /></Pressable>
             <View style={styles.heroActionGroup}>
+              {isOwner && (
+                <Pressable onPress={() => router.push({ pathname: "/recipe/create", params: { editId: String(recipe.id) } })} style={styles.heroButton} accessibilityLabel="Tarifi düzenle">
+                  <IconSymbol name="edit" size={20} color="#FFFFFF" />
+                </Pressable>
+              )}
               <Pressable onPress={() => setIsLanguagePickerOpen(true)} style={styles.heroButton} accessibilityLabel="Dil değiştir">
                 {isTranslating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="translate" size={20} color="#FFFFFF" />}
               </Pressable>

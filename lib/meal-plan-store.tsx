@@ -21,9 +21,10 @@ export const MEAL_SLOT_DEFAULT_TIME: Record<MealSlot, { hour: number; minute: nu
   ara2: { hour: 16, minute: 30 },
 };
 
+export const MAX_ENTRIES_PER_SLOT = 3;
+
 export type MealPlanEntry = {
-  /** `${date}:${slot}` */
-  key: string;
+  id: string;
   date: string; // YYYY-MM-DD
   slot: MealSlot;
   recipeId: string;
@@ -31,26 +32,26 @@ export type MealPlanEntry = {
   servings: number;
 };
 
-const STORAGE_KEY = "mealPlan.entries.v1";
+const STORAGE_KEY = "mealPlan.entries.v2";
 
-function entryKey(date: string, slot: MealSlot) {
+function slotKey(date: string, slot: MealSlot) {
   return `${date}:${slot}`;
 }
 
 type MealPlanContextValue = {
-  entries: Record<string, MealPlanEntry>;
+  entries: Record<string, MealPlanEntry[]>;
   isReady: boolean;
-  getEntry: (date: string, slot: MealSlot) => MealPlanEntry | undefined;
-  setEntry: (date: string, slot: MealSlot, recipe: { id: string; title: string }, servings: number) => void;
-  updateServings: (date: string, slot: MealSlot, servings: number) => void;
-  removeEntry: (date: string, slot: MealSlot) => void;
+  getEntries: (date: string, slot: MealSlot) => MealPlanEntry[];
+  addEntry: (date: string, slot: MealSlot, recipe: { id: string; title: string }, servings: number) => boolean;
+  updateServings: (date: string, slot: MealSlot, entryId: string, servings: number) => void;
+  removeEntry: (date: string, slot: MealSlot, entryId: string) => void;
   getWeekEntries: (weekDates: string[]) => MealPlanEntry[];
 };
 
 const MealPlanContext = createContext<MealPlanContextValue | null>(null);
 
 export function MealPlanProvider({ children }: { children: ReactNode }) {
-  const [entries, setEntries] = useState<Record<string, MealPlanEntry>>({});
+  const [entries, setEntries] = useState<Record<string, MealPlanEntry[]>>({});
   const [isReady, setIsReady] = useState(false);
 
   useEffect(() => {
@@ -67,38 +68,46 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsReady(true));
   }, []);
 
-  const persist = useCallback((next: Record<string, MealPlanEntry>) => {
+  const persist = useCallback((next: Record<string, MealPlanEntry[]>) => {
     setEntries(next);
     void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
   }, []);
 
-  const getEntry = useCallback((date: string, slot: MealSlot) => entries[entryKey(date, slot)], [entries]);
+  const getEntries = useCallback((date: string, slot: MealSlot) => entries[slotKey(date, slot)] ?? [], [entries]);
 
-  const setEntry = useCallback(
+  const addEntry = useCallback(
     (date: string, slot: MealSlot, recipe: { id: string; title: string }, servings: number) => {
-      const key = entryKey(date, slot);
-      persist({ ...entries, [key]: { key, date, slot, recipeId: recipe.id, recipeTitle: recipe.title, servings } });
+      const key = slotKey(date, slot);
+      const current = entries[key] ?? [];
+      if (current.length >= MAX_ENTRIES_PER_SLOT) return false;
+      const newEntry: MealPlanEntry = {
+        id: `${key}:${Date.now()}:${Math.random().toString(36).slice(2, 8)}`,
+        date,
+        slot,
+        recipeId: recipe.id,
+        recipeTitle: recipe.title,
+        servings,
+      };
+      persist({ ...entries, [key]: [...current, newEntry] });
+      return true;
     },
     [entries, persist],
   );
 
   const updateServings = useCallback(
-    (date: string, slot: MealSlot, servings: number) => {
-      const key = entryKey(date, slot);
-      const current = entries[key];
-      if (!current) return;
-      persist({ ...entries, [key]: { ...current, servings: Math.max(1, servings) } });
+    (date: string, slot: MealSlot, entryId: string, servings: number) => {
+      const key = slotKey(date, slot);
+      const current = entries[key] ?? [];
+      persist({ ...entries, [key]: current.map((e) => (e.id === entryId ? { ...e, servings: Math.max(1, servings) } : e)) });
     },
     [entries, persist],
   );
 
   const removeEntry = useCallback(
-    (date: string, slot: MealSlot) => {
-      const key = entryKey(date, slot);
-      if (!entries[key]) return;
-      const next = { ...entries };
-      delete next[key];
-      persist(next);
+    (date: string, slot: MealSlot, entryId: string) => {
+      const key = slotKey(date, slot);
+      const current = entries[key] ?? [];
+      persist({ ...entries, [key]: current.filter((e) => e.id !== entryId) });
     },
     [entries, persist],
   );
@@ -106,14 +115,16 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   const getWeekEntries = useCallback(
     (weekDates: string[]) => {
       const dateSet = new Set(weekDates);
-      return Object.values(entries).filter((entry) => dateSet.has(entry.date));
+      return Object.values(entries)
+        .flat()
+        .filter((entry) => dateSet.has(entry.date));
     },
     [entries],
   );
 
   const value = useMemo<MealPlanContextValue>(
-    () => ({ entries, isReady, getEntry, setEntry, updateServings, removeEntry, getWeekEntries }),
-    [entries, isReady, getEntry, setEntry, updateServings, removeEntry, getWeekEntries],
+    () => ({ entries, isReady, getEntries, addEntry, updateServings, removeEntry, getWeekEntries }),
+    [entries, isReady, getEntries, addEntry, updateServings, removeEntry, getWeekEntries],
   );
 
   return <MealPlanContext.Provider value={value}>{children}</MealPlanContext.Provider>;

@@ -10,7 +10,20 @@ import { trpc } from "@/lib/trpc";
 import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 import { useRouter } from "expo-router";
 
-const popularIngredients = ["Domates", "Soğan", "Sarımsak", "Zeytinyağı", "Tavuk", "Yumurta", "Peynir", "Un", "Pirinç", "Mercimek"];
+function normalizeIngredientName(raw: string) {
+  return raw
+    .replace(/\([^)]*\)/g, "")
+    .trim()
+    .toLocaleLowerCase("tr-TR")
+    .split(" ")
+    .filter(Boolean)
+    .slice(-2) // "yeşil sivri biber" gibi uzun tariflerde son 1-2 kelimeye indir, çok özgün olmayanları grupla
+    .join(" ");
+}
+
+function displayCase(name: string) {
+  return name.charAt(0).toLocaleUpperCase("tr-TR") + name.slice(1);
+}
 
 export default function SearchScreen() {
   const colors = useColors();
@@ -34,6 +47,42 @@ export default function SearchScreen() {
     category: selectedCategory === "Tümü" ? undefined : selectedCategory,
     search: query.trim() || undefined,
   });
+
+  // Malzeme önerileri için, mevcut arama/kategori filtresinden bağımsız
+  // olarak TÜM tarifleri kullanıyoruz; amaç ne yazdığına göre değil,
+  // veritabanındaki tüm tariflere göre öneri sunmak.
+  const allRecipesForIngredientsQuery = trpc.recipes.list.useQuery();
+
+  const suggestedIngredients = useMemo(() => {
+    const allRecipes = (allRecipesForIngredientsQuery.data ?? []).map(adaptServerRecipe);
+    const selectedNormalized = selectedIngredients.map((s) => s.toLocaleLowerCase("tr-TR"));
+
+    // 1. Adım: seçili malzemelerin HEPSİNİ içeren tarifleri bul.
+    const matchingRecipes = selectedNormalized.length === 0
+      ? allRecipes
+      : allRecipes.filter((recipe) => {
+          const recipeIngs = recipe.ingredients.map((i) => normalizeIngredientName(i.name));
+          return selectedNormalized.every((sel) => recipeIngs.some((ri) => ri.includes(sel) || sel.includes(ri)));
+        });
+
+    // 2. Adım: bu tariflerdeki malzemeleri say (zaten seçilmiş olanlar hariç).
+    const frequency = new Map<string, number>();
+    for (const recipe of matchingRecipes) {
+      const seenInThisRecipe = new Set<string>();
+      for (const ingredient of recipe.ingredients) {
+        const normalized = normalizeIngredientName(ingredient.name);
+        if (!normalized || seenInThisRecipe.has(normalized)) continue;
+        if (selectedNormalized.some((sel) => normalized.includes(sel) || sel.includes(normalized))) continue;
+        seenInThisRecipe.add(normalized);
+        frequency.set(normalized, (frequency.get(normalized) ?? 0) + 1);
+      }
+    }
+
+    return [...frequency.entries()]
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10)
+      .map(([name]) => displayCase(name));
+  }, [allRecipesForIngredientsQuery.data, selectedIngredients]);
 
   const results = useMemo(() => {
     const baseRecipes = (recipesQuery.data ?? []).map(adaptServerRecipe);
@@ -126,7 +175,7 @@ export default function SearchScreen() {
       <View style={styles.ingredientSection}>
         <Text style={[styles.sectionLabel, { color: colors.muted }]}>Elimde bu malzemeler var (Eşleştir):</Text>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chipRow}>
-          {popularIngredients.map((ing) => {
+          {[...selectedIngredients, ...suggestedIngredients].map((ing) => {
             const active = selectedIngredients.includes(ing);
             return (
               <Pressable
