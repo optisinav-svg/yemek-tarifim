@@ -4,7 +4,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { useColors } from "@/hooks/use-colors";
-import { categories, countries, type Recipe, type CountryCode } from "@/lib/recipe-data";
+import { categories, countries, formatTotalTime, type Recipe, type CountryCode } from "@/lib/recipe-data";
 import { CountryFlagIcon } from "@/lib/flag-icons";
 import { trpc } from "@/lib/trpc";
 import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
@@ -236,7 +236,7 @@ export default function SearchScreen() {
               <Text style={[styles.recipeTitle, { color: colors.foreground }]}>{item.title}</Text>
               <Text style={[styles.recipeSummary, { color: colors.muted }]} numberOfLines={2}>{item.summary}</Text>
               <View style={styles.recipeFooter}>
-                <Text style={[styles.metaText, { color: colors.muted }]}>⏱ {item.prepMinutes + item.cookMinutes} dk</Text>
+                <Text style={[styles.metaText, { color: colors.muted }]}>⏱ {formatTotalTime(item)}</Text>
                 <Text style={[styles.metaText, { color: colors.muted }]}>🍽 {item.servings} porsiyon</Text>
                 <Text style={[styles.catBadge, { color: colors.primary }]}>{item.category}</Text>
               </View>

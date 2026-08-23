@@ -33,8 +33,11 @@ async function getNotifications(): Promise<NotificationsModule | null> {
 
 function stopCompletionChime() {
   try {
-    completionPlayer?.pause();
-    completionPlayer?.seekTo(0);
+    if (completionPlayer) {
+      completionPlayer.loop = false;
+      completionPlayer.pause();
+      completionPlayer.seekTo(0);
+    }
   } catch {
     // The player may already be released on a platform without audio support.
   }
@@ -51,19 +54,17 @@ async function playCompletionChime() {
       shouldRouteThroughEarpiece: false,
     });
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
-    
-    for (let i = 0; i < 3; i++) {
-      try {
-        completionPlayer.volume = 1.0;
-        completionPlayer.seekTo(0);
-        completionPlayer.play();
-        if (Platform.OS !== "web") {
-          await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-          await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
-        }
-      } catch {}
-      await new Promise((resolve) => setTimeout(resolve, 5000));
+    completionPlayer.volume = 1.0;
+    completionPlayer.loop = true;
+    completionPlayer.seekTo(0);
+    completionPlayer.play();
+    if (Platform.OS !== "web") {
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Heavy);
     }
+    // Zil sesi burada kasıtlı olarak durdurulmuyor: kullanıcı zamanlayıcıyı
+    // kapatana (dismiss/reset/start) kadar döngüsel olarak çalmaya devam
+    // eder. Durdurma işlemi stopCompletionChime() ile yapılır.
   } catch {
     // The visual completed state and haptic feedback remain available if audio is unavailable.
   }

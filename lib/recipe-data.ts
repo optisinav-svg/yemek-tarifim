@@ -73,7 +73,11 @@ export function getRecipes(country: CountryCode, category?: string, search?: str
 }
 
 export function formatTotalTime(recipe: Recipe) {
-  return `${recipe.prepMinutes + recipe.cookMinutes} dk`;
+  const total = recipe.prepMinutes + recipe.cookMinutes;
+  if (total < 60) return `${total} dk`;
+  const hours = Math.floor(total / 60);
+  const minutes = total % 60;
+  return minutes === 0 ? `${hours} sa` : `${hours} sa ${minutes} dk`;
 }
 
 export function getCategoryCount(categoryName: string, country: CountryCode = "ALL") {
