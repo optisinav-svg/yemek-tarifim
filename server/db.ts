@@ -410,6 +410,22 @@ export async function seedStarterRecipes() {
   if (inserted > 0) {
     console.log(`[Seed] ${inserted} başlangıç tarifi eklendi.`);
   }
+
+  // Başlangıç tariflerini, ayrı bir "sistem" hesabı yerine Rıza'nın kendi
+  // hesabına ata — böylece "Değiştir" (düzenleme) butonunu kendi
+  // tarifleriymiş gibi kullanabilir.
+  const OWNER_EMAIL = "cografyaci.rizaa@gmail.com";
+  const [owner] = await db.select().from(users).where(eq(users.email, OWNER_EMAIL)).limit(1);
+  if (owner) {
+    const reassignResult = await db
+      .update(recipes)
+      .set({ authorId: owner.id })
+      .where(eq(recipes.authorId, seedAuthor.id))
+      .returning({ id: recipes.id });
+    if (reassignResult.length > 0) {
+      console.log(`[Seed] ${reassignResult.length} başlangıç tarifi Rıza'nın hesabına atandı.`);
+    }
+  }
 }
 
 export async function createRecipeMedia(data: InsertRecipeMedia) {
