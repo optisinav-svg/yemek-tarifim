@@ -53,7 +53,7 @@ async function playCompletionChime() {
       shouldPlayInBackground: false,
       shouldRouteThroughEarpiece: false,
     });
-    completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.wav"));
+    completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.mp4"));
     completionPlayer.volume = 1.0;
     completionPlayer.loop = true;
     completionPlayer.seekTo(0);
