@@ -336,14 +336,64 @@ export async function listPublishedRecipes(filters?: { countryCode?: string; cat
     const search = `%${filters.search}%`;
     conditions.push(or(like(recipes.title, search), like(recipes.summary, search))!);
   }
-  const result = await db.select().from(recipes).where(and(...conditions)).orderBy(desc(recipes.createdAt));
+  const result = await db
+    .select({
+      id: recipes.id,
+      authorId: recipes.authorId,
+      countryCode: recipes.countryCode,
+      category: recipes.category,
+      title: recipes.title,
+      summary: recipes.summary,
+      tip: recipes.tip,
+      imageUrl: recipes.imageUrl,
+      servings: recipes.servings,
+      prepMinutes: recipes.prepMinutes,
+      cookMinutes: recipes.cookMinutes,
+      ingredientsJson: recipes.ingredientsJson,
+      stepsJson: recipes.stepsJson,
+      status: recipes.status,
+      createdAt: recipes.createdAt,
+      updatedAt: recipes.updatedAt,
+      authorName: users.name,
+      authorSurname: users.surname,
+      authorImageUrl: users.imageUrl,
+    })
+    .from(recipes)
+    .leftJoin(users, eq(recipes.authorId, users.id))
+    .where(and(...conditions))
+    .orderBy(desc(recipes.createdAt));
   return result;
 }
 
 export async function getRecipeById(id: number) {
   const db = await getDb();
   if (!db) return undefined;
-  const result = await db.select().from(recipes).where(and(eq(recipes.id, id), eq(recipes.status, "published"))).limit(1);
+  const result = await db
+    .select({
+      id: recipes.id,
+      authorId: recipes.authorId,
+      countryCode: recipes.countryCode,
+      category: recipes.category,
+      title: recipes.title,
+      summary: recipes.summary,
+      tip: recipes.tip,
+      imageUrl: recipes.imageUrl,
+      servings: recipes.servings,
+      prepMinutes: recipes.prepMinutes,
+      cookMinutes: recipes.cookMinutes,
+      ingredientsJson: recipes.ingredientsJson,
+      stepsJson: recipes.stepsJson,
+      status: recipes.status,
+      createdAt: recipes.createdAt,
+      updatedAt: recipes.updatedAt,
+      authorName: users.name,
+      authorSurname: users.surname,
+      authorImageUrl: users.imageUrl,
+    })
+    .from(recipes)
+    .leftJoin(users, eq(recipes.authorId, users.id))
+    .where(and(eq(recipes.id, id), eq(recipes.status, "published")))
+    .limit(1);
   return result[0];
 }
 
@@ -493,6 +543,13 @@ export async function updateRecipe(id: number, authorId: number, data: Partial<I
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await db.update(recipes).set(data).where(and(eq(recipes.id, id), eq(recipes.authorId, authorId)));
+}
+
+export async function deleteOwnRecipe(id: number, authorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const result = await db.delete(recipes).where(and(eq(recipes.id, id), eq(recipes.authorId, authorId))).returning({ id: recipes.id });
+  return result.length > 0;
 }
 
 export async function hideRecipe(id: number) {

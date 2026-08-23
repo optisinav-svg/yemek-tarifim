@@ -188,6 +188,7 @@ export default function CreateRecipeScreen() {
   };
 
   const handleSave = async () => {
+    if (isBusy) return;
     if (!canSave) {
       Alert.alert("Eksik bilgi", "Tarif adı, en az bir malzeme ve bir yapılış adımı ekleyin.");
       return;
@@ -298,7 +299,7 @@ export default function CreateRecipeScreen() {
               <Pressable onPress={() => void pickMedia()} disabled={media.length >= 3} style={[styles.mediaPicker, { borderColor: colors.border, opacity: media.length >= 3 ? 0.45 : 1 }]} accessibilityRole="button" accessibilityLabel="Fotoğraf veya video seç"><IconSymbol name="add" size={18} color={colors.primary} /><Text style={[styles.mediaPickerText, { color: colors.primary }]}>{media.length > 0 ? "Başka medya ekle" : "Galeriden fotoğraf veya video seç"}</Text></Pressable>
             </View>
           </View>
-          <Pressable onPress={() => void handleSave()} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: canSave ? 1 : 0.55 }]}><Text style={styles.saveText}>{uploadMediaMutation.isPending ? "Medya yükleniyor..." : (createMutation.isPending || updateMutation.isPending) ? (isEditMode ? "Güncelleniyor..." : "Yayınlanıyor...") : (isEditMode ? "Değişiklikleri Kaydet" : "Tarifi yayınla")}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
+          <Pressable onPress={() => void handleSave()} disabled={isBusy || !canSave} style={[styles.saveButton, { backgroundColor: colors.primary, opacity: (canSave && !isBusy) ? 1 : 0.55 }]}><Text style={styles.saveText}>{uploadMediaMutation.isPending ? "Medya yükleniyor..." : (createMutation.isPending || updateMutation.isPending) ? (isEditMode ? "Güncelleniyor..." : "Yayınlanıyor...") : (isEditMode ? "Değişiklikleri Kaydet" : "Tarifi yayınla")}</Text><IconSymbol name="chevron.right" size={19} color="#FFFFFF" /></Pressable>
         </ScrollView>
       </KeyboardAvoidingView>
     </ScreenContainer>

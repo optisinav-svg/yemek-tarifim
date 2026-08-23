@@ -6,7 +6,7 @@ import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "../shared/const";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserMealPlan, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserMealPlan, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
+import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, deleteOwnRecipe, findRecipeGroup, getRecipeById, getUserMealPlan, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserMealPlan, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
 import { authCustomRouter } from "./routers/auth-custom";
 import { systemRouter } from "./_core/systemRouter";
@@ -408,6 +408,14 @@ export const appRouter = router({
     hide: adminProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
       await hideRecipe(input.id);
       await audit(ctx, "recipe_hidden", "recipe", input.id);
+      return { success: true } as const;
+    }),
+    delete: protectedProcedure.input(z.object({ id: z.number().int().positive() })).mutation(async ({ ctx, input }) => {
+      const deleted = await deleteOwnRecipe(input.id, ctx.user.id);
+      if (!deleted) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Bu tarifi silme yetkiniz yok veya tarif zaten silinmiş." });
+      }
+      await audit(ctx, "recipe_deleted", "recipe", input.id);
       return { success: true } as const;
     }),
   }),

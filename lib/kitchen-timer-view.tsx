@@ -53,6 +53,10 @@ async function playCompletionChime() {
       shouldPlayInBackground: false,
       shouldRouteThroughEarpiece: false,
     });
+  } catch (err) {
+    console.warn("[Timer] setAudioModeAsync failed, will still try to play:", err);
+  }
+  try {
     completionPlayer ??= createAudioPlayer(require("../assets/audio/timer-complete.mp4"));
     completionPlayer.volume = 1.0;
     completionPlayer.loop = true;
@@ -65,8 +69,9 @@ async function playCompletionChime() {
     // Zil sesi burada kasıtlı olarak durdurulmuyor: kullanıcı zamanlayıcıyı
     // kapatana (dismiss/reset/start) kadar döngüsel olarak çalmaya devam
     // eder. Durdurma işlemi stopCompletionChime() ile yapılır.
-  } catch {
-    // The visual completed state and haptic feedback remain available if audio is unavailable.
+  } catch (err) {
+    console.warn("[Timer] Completion sound failed to play:", err);
+    // The visual completed state remains available even if audio fails.
   }
 }
 

@@ -222,6 +222,14 @@ export default function RecipeDetailScreen() {
   const displaySteps = activeTranslation?.steps?.length ? activeTranslation.steps : recipe.steps;
   const isTranslating = translateMutation.isPending;
   const isOwner = Boolean(user && serverRecipeQuery.data && serverRecipeQuery.data.authorId === user.id);
+  const deleteMutation = trpc.recipes.delete.useMutation({
+    onSuccess: () => {
+      Alert.alert("Silindi", "Tarif kalıcı olarak silindi.", [{ text: "Tamam", onPress: () => router.back() }]);
+    },
+    onError: (err) => {
+      Alert.alert("Hata", err.message || "Tarif silinemedi.");
+    },
+  });
 
   const saved = savedRecipeIds.includes(recipe.id);
   const totalTime = formatTotalTime(recipe);
@@ -236,9 +244,29 @@ export default function RecipeDetailScreen() {
             <Pressable onPress={() => router.back()} style={styles.heroButton} accessibilityLabel="Geri dön"><IconSymbol name="arrow-left" size={21} color="#FFFFFF" /></Pressable>
             <View style={styles.heroActionGroup}>
               {isOwner && (
-                <Pressable onPress={() => router.push({ pathname: "/recipe/create", params: { editId: String(recipe.id) } })} style={styles.heroButton} accessibilityLabel="Tarifi düzenle">
-                  <IconSymbol name="edit" size={20} color="#FFFFFF" />
-                </Pressable>
+                <>
+                  <Pressable onPress={() => router.push({ pathname: "/recipe/create", params: { editId: String(recipe.id) } })} style={styles.heroButton} accessibilityLabel="Tarifi düzenle">
+                    <IconSymbol name="edit" size={20} color="#FFFFFF" />
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      Alert.alert("Tarifi sil", "Bu tarifi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", [
+                        { text: "Vazgeç", style: "cancel" },
+                        {
+                          text: "Sil",
+                          style: "destructive",
+                          onPress: () => {
+                            deleteMutation.mutate({ id: serverId });
+                          },
+                        },
+                      ]);
+                    }}
+                    style={styles.heroButton}
+                    accessibilityLabel="Tarifi sil"
+                  >
+                    {deleteMutation.isPending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="delete" size={20} color="#FFFFFF" />}
+                  </Pressable>
+                </>
               )}
               <Pressable onPress={() => setIsLanguagePickerOpen(true)} style={styles.heroButton} accessibilityLabel="Dil değiştir">
                 {isTranslating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="translate" size={20} color="#FFFFFF" />}
