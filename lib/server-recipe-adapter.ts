@@ -33,6 +33,9 @@ export function adaptServerRecipe(server: {
   ingredients: unknown;
   steps: unknown;
   createdAt: string | Date;
+  authorName?: string | null;
+  authorSurname?: string | null;
+  authorImageUrl?: string | null;
 }): Recipe {
   const country: CountryCode = server.countryCode === "TR" ? "TR" : server.countryCode === "AZ" ? "AZ" : "ALL";
   const countryMeta =
@@ -64,6 +67,12 @@ export function adaptServerRecipe(server: {
 
   const steps = Array.isArray(server.steps) ? server.steps.map((s) => String(s)) : [];
 
+  const fullName = [server.authorName, server.authorSurname].filter(Boolean).join(" ").trim();
+  const authorDisplayName = fullName || "Topluluk üyesi";
+  const initials = fullName
+    ? fullName.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]?.toLocaleUpperCase("tr-TR")).join("")
+    : "TY";
+
   return {
     id: String(server.id),
     title: server.title,
@@ -72,8 +81,9 @@ export function adaptServerRecipe(server: {
     countryName: countryMeta.name,
     flag: countryMeta.flag,
     image: server.imageUrl ? { uri: resolveAssetUrl(server.imageUrl) } : placeholderImageFor(server.id),
-    author: "Topluluk üyesi",
-    authorAvatar: "TY",
+    author: authorDisplayName,
+    authorAvatar: initials,
+    authorImage: server.authorImageUrl ? resolveAssetUrl(server.authorImageUrl) : undefined,
     prepMinutes: server.prepMinutes,
     cookMinutes: server.cookMinutes,
     servings: server.servings,

@@ -2,6 +2,7 @@ import { Image } from "expo-image";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
 import { IconSymbol } from "@/components/ui/icon-symbol";
+import { CountryFlagIcon } from "@/lib/flag-icons";
 import { useAppStore } from "@/lib/app-store";
 import { formatTotalTime, type Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
@@ -35,11 +36,18 @@ export function RecipeCard({ recipe, onPress }: { recipe: Recipe; onPress: () =>
       </View>
       <View style={styles.body}>
         <Text numberOfLines={2} style={[styles.title, { color: colors.foreground }]}>{recipe.title}</Text>
-        <Text numberOfLines={1} style={[styles.category, { color: colors.muted }]}>{recipe.category} · {recipe.flag}</Text>
+        <View style={styles.categoryRow}>
+          <CountryFlagIcon code={recipe.country} size={12} />
+          <Text numberOfLines={1} style={[styles.category, { color: colors.muted }]}>{recipe.category}</Text>
+        </View>
         <View style={styles.authorRow}>
-          <View style={[styles.avatar, { backgroundColor: colors.success }]}>
-            <Text style={styles.avatarText}>{recipe.authorAvatar}</Text>
-          </View>
+          {recipe.authorImage ? (
+            <Image source={{ uri: recipe.authorImage }} style={styles.avatarImage} contentFit="cover" />
+          ) : (
+            <View style={[styles.avatar, { backgroundColor: colors.success }]}>
+              <Text style={styles.avatarText}>{recipe.authorAvatar}</Text>
+            </View>
+          )}
           <Text numberOfLines={1} style={[styles.author, { color: colors.muted }]}>{recipe.author}</Text>
         </View>
       </View>
@@ -57,9 +65,11 @@ const styles = StyleSheet.create({
   timeText: { color: "#FFF8F0", fontSize: 11, fontWeight: "700" },
   body: { padding: 12 },
   title: { fontSize: 15, lineHeight: 20, fontWeight: "800" },
-  category: { marginTop: 5, fontSize: 12, fontWeight: "600" },
+  category: { fontSize: 12, fontWeight: "600" },
+  categoryRow: { flexDirection: "row", alignItems: "center", gap: 5, marginTop: 5 },
   authorRow: { flexDirection: "row", alignItems: "center", gap: 7, marginTop: 12 },
   avatar: { width: 23, height: 23, alignItems: "center", justifyContent: "center", borderRadius: 12 },
+  avatarImage: { width: 23, height: 23, borderRadius: 12 },
   avatarText: { color: "#FFFFFF", fontSize: 9, fontWeight: "800" },
   author: { flex: 1, fontSize: 11, fontWeight: "600" },
 });

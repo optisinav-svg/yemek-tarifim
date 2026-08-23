@@ -19,6 +19,7 @@ export type Recipe = {
   image: ImageSourcePropType;
   author: string;
   authorAvatar: string;
+  authorImage?: string;
   prepMinutes: number;
   cookMinutes: number;
   servings: number;
