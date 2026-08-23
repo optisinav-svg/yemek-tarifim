@@ -1,7 +1,7 @@
 import { drizzle } from "drizzle-orm/node-postgres";
 import { and, desc, eq, like, or } from "drizzle-orm";
 import { Pool } from "pg";
-import { AuditLog, ContentReport, InsertContentReport, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
+import { AuditLog, ContentReport, InsertContentReport, InsertMealPlanEntry, InsertRecipe, InsertRecipeAttempt, InsertRecipeComment, InsertRecipeGroup, InsertRecipeMedia, InsertSavedRecipe, InsertShoppingItem, InsertUser, RecipeGroup, auditLogs, contentReports, mealPlanEntries, recipeAttempts, recipeComments, recipeGroups, recipeMedia, recipes, rateLimitBuckets, savedRecipes, shoppingItems, users } from "../drizzle/schema";
 import { ENV } from "./_core/env";
 
 let _db: any = null;
@@ -161,6 +161,18 @@ export async function getDb() {
           "reviewedBy" INTEGER,
           "reviewedAt" TIMESTAMP,
           "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL
+        );
+        CREATE TABLE IF NOT EXISTS meal_plan_entries (
+          id SERIAL PRIMARY KEY,
+          "userId" INTEGER NOT NULL,
+          "entryKey" VARCHAR(160) NOT NULL,
+          date VARCHAR(10) NOT NULL,
+          slot VARCHAR(20) NOT NULL,
+          "recipeId" VARCHAR(60) NOT NULL,
+          "recipeTitle" VARCHAR(200) NOT NULL,
+          servings INTEGER DEFAULT 2 NOT NULL,
+          "createdAt" TIMESTAMP DEFAULT NOW() NOT NULL,
+          UNIQUE ("userId", "entryKey")
         );
       `);
     } catch (error) {
@@ -518,6 +530,41 @@ export async function replaceUserSyncState(
         checked: item.checked,
       }));
       await tx.insert(shoppingItems).values(shoppingRows);
+    }
+  });
+}
+
+// Takvim (haftalık öğün planı) verisi, kasıtlı olarak yukarıdaki genel
+// sync.get/sync.replace mekanizmasından AYRI tutuluyor. Aksi halde, iki
+// farklı ekran (Market ve Takvim) aynı "hepsini değiştir" uç noktasını
+// birbirinden habersiz çağırırsa, biri diğerinin verisini silebilirdi.
+export async function getUserMealPlan(userId: number) {
+  const db = await getDb();
+  if (!db) return [] as Array<{ id: string; date: string; slot: string; recipeId: string; recipeTitle: string; servings: number }>;
+  const rows = await db.select().from(mealPlanEntries).where(eq(mealPlanEntries.userId, userId));
+  return rows.map((item) => ({ id: item.entryKey, date: item.date, slot: item.slot, recipeId: item.recipeId, recipeTitle: item.recipeTitle, servings: item.servings }));
+}
+
+export async function replaceUserMealPlan(
+  userId: number,
+  entries: Array<{ id: string; date: string; slot: string; recipeId: string; recipeTitle: string; servings: number }>,
+) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  await db.transaction(async (tx: any) => {
+    await tx.delete(mealPlanEntries).where(eq(mealPlanEntries.userId, userId));
+    if (entries.length > 0) {
+      const rows: InsertMealPlanEntry[] = entries.map((item) => ({
+        userId,
+        entryKey: item.id,
+        date: item.date,
+        slot: item.slot,
+        recipeId: item.recipeId,
+        recipeTitle: item.recipeTitle,
+        servings: item.servings,
+      }));
+      await tx.insert(mealPlanEntries).values(rows);
     }
   });
 }

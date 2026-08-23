@@ -1,5 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { createTRPCClient } from "./trpc";
+import { useAuth } from "@/hooks/use-auth";
 
 export const MEAL_SLOTS = ["sabah", "ogle", "aksam", "ara1", "ara2"] as const;
 export type MealSlot = (typeof MEAL_SLOTS)[number];
@@ -50,9 +52,26 @@ type MealPlanContextValue = {
 
 const MealPlanContext = createContext<MealPlanContextValue | null>(null);
 
+function flatten(entries: Record<string, MealPlanEntry[]>): MealPlanEntry[] {
+  return Object.values(entries).flat();
+}
+
+function fromFlatList(list: MealPlanEntry[]): Record<string, MealPlanEntry[]> {
+  const map: Record<string, MealPlanEntry[]> = {};
+  for (const entry of list) {
+    const key = slotKey(entry.date, entry.slot);
+    if (!map[key]) map[key] = [];
+    map[key].push(entry);
+  }
+  return map;
+}
+
 export function MealPlanProvider({ children }: { children: ReactNode }) {
+  const { isAuthenticated, loading: authLoading } = useAuth();
+  const trpcClient = useMemo(() => createTRPCClient(), []);
   const [entries, setEntries] = useState<Record<string, MealPlanEntry[]>>({});
   const [isReady, setIsReady] = useState(false);
+  const hasHydratedServer = useRef(false);
 
   useEffect(() => {
     AsyncStorage.getItem(STORAGE_KEY)
@@ -68,10 +87,49 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
       .finally(() => setIsReady(true));
   }, []);
 
+  const saveToServer = useCallback(async (next: Record<string, MealPlanEntry[]>) => {
+    if (!isAuthenticated || !hasHydratedServer.current) return;
+    try {
+      await trpcClient.mealPlan.replace.mutate(flatten(next));
+    } catch (error) {
+      console.warn("[MealPlan] Server sync failed:", error);
+    }
+  }, [isAuthenticated, trpcClient]);
+
   const persist = useCallback((next: Record<string, MealPlanEntry[]>) => {
     setEntries(next);
     void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(next));
-  }, []);
+    void saveToServer(next);
+  }, [saveToServer]);
+
+  // Giriş yapılınca: cihazdaki ve sunucudaki Takvim planlarını birleştir,
+  // böylece hem telefon hem bilgisayardaki planlar bir araya gelir.
+  useEffect(() => {
+    if (authLoading || !isReady) return;
+    if (!isAuthenticated) {
+      hasHydratedServer.current = false;
+      return;
+    }
+    if (hasHydratedServer.current) return;
+
+    (async () => {
+      try {
+        const remote = await trpcClient.mealPlan.get.query();
+        const remoteList = remote as MealPlanEntry[];
+        const localList = flatten(entries);
+        const merged = new Map<string, MealPlanEntry>();
+        [...remoteList, ...localList].forEach((entry) => merged.set(entry.id, entry));
+        const mergedMap = fromFlatList([...merged.values()]);
+        hasHydratedServer.current = true;
+        setEntries(mergedMap);
+        void AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(mergedMap));
+        await trpcClient.mealPlan.replace.mutate([...merged.values()]);
+      } catch (error) {
+        console.warn("[MealPlan] Server hydration failed:", error);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [authLoading, isAuthenticated, isReady]);
 
   const getEntries = useCallback((date: string, slot: MealSlot) => entries[slotKey(date, slot)] ?? [], [entries]);
 
@@ -115,9 +173,7 @@ export function MealPlanProvider({ children }: { children: ReactNode }) {
   const getWeekEntries = useCallback(
     (weekDates: string[]) => {
       const dateSet = new Set(weekDates);
-      return Object.values(entries)
-        .flat()
-        .filter((entry) => dateSet.has(entry.date));
+      return flatten(entries).filter((entry) => dateSet.has(entry.date));
     },
     [entries],
   );

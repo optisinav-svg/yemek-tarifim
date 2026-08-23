@@ -22,6 +22,7 @@ export default function ProfileScreen() {
   const { user, isAuthenticated, loading, logout, refresh } = useAuth();
   const myRecipesQuery = trpc.recipes.list.useQuery(undefined, { enabled: isAuthenticated });
   const myRecipeCount = (myRecipesQuery.data ?? []).filter((r) => r.authorId === user?.id).length;
+  const validSavedCount = (myRecipesQuery.data ?? []).filter((r) => savedRecipeIds.includes(String(r.id))).length;
   const [isEditing, setIsEditing] = useState(false);
   const [isAuthModalVisible, setIsAuthModalVisible] = useState(false);
   const [name, setName] = useState("");
@@ -188,7 +189,7 @@ export default function ProfileScreen() {
         </Pressable>
 
         <View style={styles.stats}>
-          <Stat value={String(savedRecipeIds.length)} label="Listemde" colors={colors} />
+          <Stat value={String(validSavedCount)} label="Listemde" colors={colors} />
           <Stat value={String(myRecipeCount)} label="Tarifim" colors={colors} />
           <Stat value="TR" label="Mutfağım" colors={colors} />
         </View>
@@ -204,7 +205,7 @@ export default function ProfileScreen() {
 
         <Text style={[styles.sectionTitle, { color: colors.foreground }]}>Tercihler ve Yönetim</Text>
         <View style={[styles.settingsCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
-          <SettingRow icon="bookmark" title="Listemdeki tarifler" detail={`${savedRecipeIds.length} kayıt`} colors={colors} onPress={() => router.push("/saved")} />
+          <SettingRow icon="bookmark" title="Listemdeki tarifler" detail={`${validSavedCount} kayıt`} colors={colors} onPress={() => router.push("/saved")} />
           <SettingRow icon="restaurant" title="Benim Tariflerim" detail="Yayınladığım tarifler" colors={colors} onPress={() => router.push("/my-recipes")} />
           <SettingRow icon="shopping-cart" title="Alışveriş listem" detail={isAuthenticated ? "Market hazırlığı" : "Üyelik gerekir"} colors={colors} onPress={() => { if (isAuthenticated) router.push("/shopping"); else setIsAuthModalVisible(true); }} />
           <SettingRow icon="translate" title="Dil ve Ülke" detail="Türkçe (Türkiye)" colors={colors} />

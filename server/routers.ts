@@ -6,7 +6,7 @@ import { invokeLLM } from "./_core/llm";
 import { getSessionCookieOptions } from "./_core/cookies";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "../shared/const";
 import { adminProcedure, protectedProcedure, publicProcedure, router } from "./_core/trpc";
-import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
+import { consumeRateLimit, createAuditLog, createContentReport, createRecipe, createRecipeAttempt, createRecipeComment, createRecipeGroup, createRecipeMedia, deleteAccount, findRecipeGroup, getRecipeById, getUserMealPlan, getUserSyncState, hideRecipe, listPendingContentReports, listPublishedRecipes, listRecipeAttempts, listRecipeComments, listRecipeGroups, listRecipeMedia, replaceUserMealPlan, replaceUserSyncState, resolveContentReport, updateRecipe, updateUserProfile } from "./db";
 import { storagePut } from "./storage";
 import { authCustomRouter } from "./routers/auth-custom";
 import { systemRouter } from "./_core/systemRouter";
@@ -17,7 +17,7 @@ const ingredientSchema = z.object({
   unit: z.string().trim().max(30).optional(),
 });
 
-const recipeAssetUrlSchema = z.string().trim().max(2000).refine((value) => value.startsWith("/manus-storage/") || /^https?:\/\//i.test(value), "Geçerli bir medya adresi girin.");
+const recipeAssetUrlSchema = z.string().trim().max(2_000_000).refine((value) => value.startsWith("/manus-storage/") || value.startsWith("data:") || /^https?:\/\//i.test(value), "Geçerli bir medya adresi girin.");
 const mediaInputSchema = z.object({
   url: recipeAssetUrlSchema,
   mediaType: z.enum(["image", "video"]),
@@ -125,6 +125,15 @@ const syncStateSchema = z.object({
   })).max(500),
 });
 
+const mealPlanEntriesSchema = z.array(z.object({
+  id: z.string().trim().min(1).max(160),
+  date: z.string().trim().min(1).max(10),
+  slot: z.string().trim().min(1).max(20),
+  recipeId: z.string().trim().min(1).max(60),
+  recipeTitle: z.string().trim().min(1).max(200),
+  servings: z.number().int().positive().max(100),
+})).max(500);
+
 function decodeRecipe(row: Awaited<ReturnType<typeof getRecipeById>>) {
   if (!row) return null;
   let ingredients: unknown[] = [];
@@ -209,6 +218,13 @@ export const appRouter = router({
     get: protectedProcedure.query(async ({ ctx }) => getUserSyncState(ctx.user.id)),
     replace: protectedProcedure.input(syncStateSchema).mutation(async ({ ctx, input }) => {
       await replaceUserSyncState(ctx.user.id, input);
+      return { success: true } as const;
+    }),
+  }),
+  mealPlan: router({
+    get: protectedProcedure.query(async ({ ctx }) => getUserMealPlan(ctx.user.id)),
+    replace: protectedProcedure.input(mealPlanEntriesSchema).mutation(async ({ ctx, input }) => {
+      await replaceUserMealPlan(ctx.user.id, input);
       return { success: true } as const;
     }),
   }),
@@ -427,7 +443,7 @@ export const appRouter = router({
     .input(z.object({
       name: z.string().trim().min(1).max(80).optional(),
       surname: z.string().trim().min(1).max(80).optional(),
-      imageUrl: z.string().trim().max(1000).optional(),
+      imageUrl: z.string().trim().max(2_000_000).optional(),
       password: z.string().min(6).optional(),
       confirmPassword: z.string().min(6).optional(),
     }))

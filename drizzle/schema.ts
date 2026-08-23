@@ -153,6 +153,24 @@ export const shoppingItems = pgTable("shopping_items", {
 export type ShoppingItem = typeof shoppingItems.$inferSelect;
 export type InsertShoppingItem = typeof shoppingItems.$inferInsert;
 
+export const mealPlanEntries = pgTable("meal_plan_entries", {
+  id: serial("id").primaryKey(),
+  userId: integer("userId").notNull(),
+  entryKey: varchar("entryKey", { length: 160 }).notNull(),
+  date: varchar("date", { length: 10 }).notNull(),
+  slot: varchar("slot", { length: 20 }).notNull(),
+  recipeId: varchar("recipeId", { length: 60 }).notNull(),
+  recipeTitle: varchar("recipeTitle", { length: 200 }).notNull(),
+  servings: integer("servings").default(2).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  userEntryIdx: uniqueIndex("meal_plan_entries_user_entry_idx").on(table.userId, table.entryKey),
+  userIdx: index("meal_plan_entries_user_idx").on(table.userId),
+}));
+
+export type MealPlanEntryRow = typeof mealPlanEntries.$inferSelect;
+export type InsertMealPlanEntry = typeof mealPlanEntries.$inferInsert;
+
 export const rateLimitBuckets = pgTable("rate_limit_buckets", {
   id: serial("id").primaryKey(),
   bucketKey: varchar("bucketKey", { length: 220 }).notNull().unique(),

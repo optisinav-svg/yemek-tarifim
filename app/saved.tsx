@@ -5,14 +5,19 @@ import { RecipeCard } from "@/components/recipe-card";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
-import { recipes, type Recipe } from "@/lib/recipe-data";
+import type { Recipe } from "@/lib/recipe-data";
 import { useColors } from "@/hooks/use-colors";
+import { trpc } from "@/lib/trpc";
+import { adaptServerRecipe } from "@/lib/server-recipe-adapter";
 
 export default function SavedScreen() {
   const colors = useColors();
   const router = useRouter();
   const { savedRecipeIds } = useAppStore();
-  const saved = recipes.filter((recipe) => savedRecipeIds.includes(recipe.id));
+  const recipesQuery = trpc.recipes.list.useQuery();
+  const saved = (recipesQuery.data ?? [])
+    .filter((recipe) => savedRecipeIds.includes(String(recipe.id)))
+    .map(adaptServerRecipe);
   return (
     <ScreenContainer className="px-5" edges={["top", "left", "right"]}>
       <View style={styles.topBar}><Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}><IconSymbol name="arrow-left" size={21} color={colors.foreground} /></Pressable><View><Text style={[styles.kicker, { color: colors.primary }]}>KAYDETTİKLERİM</Text><Text style={[styles.title, { color: colors.foreground }]}>Listemdeki tarifler</Text></View></View>
