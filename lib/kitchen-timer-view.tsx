@@ -479,7 +479,6 @@ export function ActiveTimerWidget() {
   return (
     <View pointerEvents="box-none" style={StyleSheet.absoluteFill}>
       <View
-        ref={widgetRef}
         accessibilityRole="button"
         accessibilityLabel={completed ? "Süre tamamlandı, uyarıyı kapatmak için kapat düğmesine dokunun" : "Aktif mutfak zamanlayıcısı; gövdeden tutup taşımak için sürükleyin"}
         accessibilityHint="Sayaç gövdesini parmağınızla tutup ekran içinde taşıyabilirsiniz. Kısa dokunuş zamanlayıcı ekranını açar."
@@ -489,6 +488,7 @@ export function ActiveTimerWidget() {
         ]}
       >
         <Pressable
+          ref={widgetRef}
           {...(isWeb ? {} : panResponder.panHandlers)}
           onPress={() => {
             if (didDragRef.current) {

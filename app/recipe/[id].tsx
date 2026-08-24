@@ -211,6 +211,15 @@ export default function RecipeDetailScreen() {
     translateMutation.mutate({ id: serverId, targetLanguage: code as "en" | "de" | "fr" | "es" | "ar" | "ru" });
   };
 
+  const deleteMutation = trpc.recipes.delete.useMutation({
+    onSuccess: () => {
+      Alert.alert("Silindi", "Tarif kalıcı olarak silindi.", [{ text: "Tamam", onPress: () => router.back() }]);
+    },
+    onError: (err) => {
+      Alert.alert("Hata", err.message || "Tarif silinemedi.");
+    },
+  });
+
   if (!recipe) {
     return <ScreenContainer className="px-5 items-center justify-center"><Text style={[styles.title, { color: colors.foreground }]}>{serverRecipeQuery.isLoading ? "Tarif yükleniyor..." : "Tarif bulunamadı."}</Text></ScreenContainer>;
   }
@@ -222,14 +231,6 @@ export default function RecipeDetailScreen() {
   const displaySteps = activeTranslation?.steps?.length ? activeTranslation.steps : recipe.steps;
   const isTranslating = translateMutation.isPending;
   const isOwner = Boolean(user && serverRecipeQuery.data && serverRecipeQuery.data.authorId === user.id);
-  const deleteMutation = trpc.recipes.delete.useMutation({
-    onSuccess: () => {
-      Alert.alert("Silindi", "Tarif kalıcı olarak silindi.", [{ text: "Tamam", onPress: () => router.back() }]);
-    },
-    onError: (err) => {
-      Alert.alert("Hata", err.message || "Tarif silinemedi.");
-    },
-  });
 
   const saved = savedRecipeIds.includes(recipe.id);
   const totalTime = formatTotalTime(recipe);
