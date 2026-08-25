@@ -94,7 +94,7 @@ export default function CookingModeScreen() {
   const timerLabel = remainingSeconds > 0 ? formatTimer(remainingSeconds) : "Zamanlayıcı";
 
   return (
-    <ScreenContainer className="px-5" edges={["top", "left", "right", "bottom"]}>
+    <ScreenContainer className="px-5" edges={["top", "left", "right", "bottom"]} reserveTabBarSpace={false}>
       {Platform.OS !== "web" ? <NativeKeepAwake /> : null}
       <View style={styles.topBar}>
         <Pressable onPress={() => router.back()} style={[styles.backButton, { backgroundColor: colors.surface, borderColor: colors.border }]}>

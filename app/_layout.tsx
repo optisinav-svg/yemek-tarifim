@@ -11,6 +11,7 @@ import { ThemeProvider } from "@/lib/theme-provider";
 import { AppStoreProvider } from "@/lib/app-store";
 import { MealPlanProvider } from "@/lib/meal-plan-store";
 import { ActiveTimerWidget, KitchenTimerProvider } from "@/lib/kitchen-timer";
+import { GlobalTabBar } from "@/components/global-tab-bar";
 import {
   SafeAreaFrameContext,
   SafeAreaInsetsContext,
@@ -103,6 +104,7 @@ export default function RootLayout() {
         </QueryClientProvider>
       </trpc.Provider>
       <ActiveTimerWidget />
+      <GlobalTabBar />
       </KitchenTimerProvider>
       </MealPlanProvider>
       </AppStoreProvider>

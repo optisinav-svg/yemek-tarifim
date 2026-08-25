@@ -461,6 +461,49 @@ export async function seedStarterRecipes() {
     console.log(`[Seed] ${inserted} başlangıç tarifi eklendi.`);
   }
 
+  // Manus tarafından üretilen tarif fotoğraflarını, ilgili tariflere
+  // (henüz fotoğrafı olmayanlara) bağla. İlk fotoğraf kapak resmi
+  // (imageUrl), varsa ikincisi recipe_media galerisine eklenir.
+  try {
+    const { seedRecipePhotos } = await import("./seed-recipe-photos.generated");
+    let photosAttached = 0;
+    for (const [title, photos] of Object.entries(seedRecipePhotos)) {
+      if (photos.length === 0) continue;
+      const [existingRecipe] = await db
+        .select({ id: recipes.id, imageUrl: recipes.imageUrl })
+        .from(recipes)
+        .where(eq(recipes.title, title))
+        .limit(1);
+      if (!existingRecipe || existingRecipe.imageUrl) continue; // zaten fotoğrafı varsa dokunma
+
+      await db.update(recipes).set({ imageUrl: photos[0] }).where(eq(recipes.id, existingRecipe.id));
+
+      if (photos[1]) {
+        const [existingMedia] = await db
+          .select({ id: recipeMedia.id })
+          .from(recipeMedia)
+          .where(eq(recipeMedia.recipeId, existingRecipe.id))
+          .limit(1);
+        if (!existingMedia) {
+          await db.insert(recipeMedia).values({
+            recipeId: existingRecipe.id,
+            authorId: seedAuthor.id,
+            mediaType: "image",
+            url: photos[1],
+            mimeType: "image/jpeg",
+            sortOrder: 0,
+          });
+        }
+      }
+      photosAttached++;
+    }
+    if (photosAttached > 0) {
+      console.log(`[Seed] ${photosAttached} tarife fotoğraf bağlandı.`);
+    }
+  } catch (err) {
+    console.warn("[Seed] Tarif fotoğrafları bağlanamadı:", err);
+  }
+
   // Başlangıç tariflerini, ayrı bir "sistem" hesabı yerine Rıza'nın kendi
   // hesabına ata — böylece "Değiştir" (düzenleme) butonunu kendi
   // tarifleriymiş gibi kullanabilir.

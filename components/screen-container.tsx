@@ -1,7 +1,8 @@
-import { View, type ViewProps } from "react-native";
-import { SafeAreaView, type Edge } from "react-native-safe-area-context";
+import { Platform, View, type ViewProps } from "react-native";
+import { SafeAreaView, useSafeAreaInsets, type Edge } from "react-native-safe-area-context";
 
 import { cn } from "@/lib/utils";
+import { GLOBAL_TAB_BAR_HEIGHT } from "@/components/global-tab-bar";
 
 export interface ScreenContainerProps extends ViewProps {
   /**
@@ -21,6 +22,12 @@ export interface ScreenContainerProps extends ViewProps {
    * Additional className for the SafeAreaView (content layer).
    */
   safeAreaClassName?: string;
+  /**
+   * Whether to reserve space at the bottom for the persistent GlobalTabBar
+   * (rendered globally, outside this screen). Set to false for screens
+   * that intentionally cover the whole viewport (e.g. cooking mode).
+   */
+  reserveTabBarSpace?: boolean;
 }
 
 /**
@@ -45,8 +52,14 @@ export function ScreenContainer({
   containerClassName,
   safeAreaClassName,
   style,
+  reserveTabBarSpace = true,
   ...props
 }: ScreenContainerProps) {
+  const insets = useSafeAreaInsets();
+  const tabBarSpace = reserveTabBarSpace
+    ? GLOBAL_TAB_BAR_HEIGHT + (Platform.OS === "web" ? 10 : Math.max(insets.bottom, 8))
+    : 0;
+
   return (
     <View
       className={cn(
@@ -61,7 +74,7 @@ export function ScreenContainer({
         className={cn("flex-1", safeAreaClassName)}
         style={style}
       >
-        <View className={cn("flex-1", className)}>{children}</View>
+        <View className={cn("flex-1", className)} style={tabBarSpace ? { paddingBottom: tabBarSpace } : undefined}>{children}</View>
       </SafeAreaView>
     </View>
   );
