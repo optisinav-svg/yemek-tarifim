@@ -1,4 +1,5 @@
 import { FlatList, Pressable, StyleSheet, Text, View } from "react-native";
+import { Image } from "expo-image";
 import { useRouter } from "expo-router";
 import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
@@ -68,6 +69,7 @@ export default function MyRecipesScreen() {
                 onPress={() => router.push(`/recipe/${item.id}`)}
                 style={[styles.recipeCard, { backgroundColor: colors.surface, borderColor: colors.border }]}
               >
+                <Image source={item.image} contentFit="cover" style={styles.recipeThumb} />
                 <View style={styles.recipeInfo}>
                   <Text numberOfLines={1} style={[styles.recipeTitle, { color: colors.foreground }]}>{item.title}</Text>
                   <Text numberOfLines={2} style={[styles.recipeDesc, { color: colors.muted }]}>{subtitle}</Text>
@@ -101,6 +103,7 @@ const styles = StyleSheet.create({
   actionButtonText: { color: "#FFFFFF", fontSize: 14, fontWeight: "800" },
   list: { gap: 12, paddingBottom: 32 },
   recipeCard: { flexDirection: "row", alignItems: "center", gap: 12, borderWidth: 1, borderRadius: 16, padding: 14 },
+  recipeThumb: { width: 56, height: 56, borderRadius: 12 },
   recipeInfo: { flex: 1, gap: 4 },
   recipeTitle: { fontSize: 15, fontWeight: "800" },
   recipeDesc: { fontSize: 12, fontWeight: "600" },

@@ -13,6 +13,7 @@ import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/hooks/use-auth";
 import { SUPPORTED_TRANSLATION_LANGUAGES } from "@/shared/const";
+import { HoverTooltip } from "@/components/hover-tooltip";
 import { formatIngredient } from "@/lib/recipe-utils";
 import { useColors } from "@/hooks/use-colors";
 
@@ -246,40 +247,49 @@ export default function RecipeDetailScreen() {
             <View style={styles.heroActionGroup}>
               {isOwner && (
                 <>
-                  <Pressable onPress={() => router.push({ pathname: "/recipe/create", params: { editId: String(recipe.id) } })} style={styles.heroButton} accessibilityLabel="Tarifi düzenle" {...(Platform.OS === "web" ? { title: "Tarifi düzenle" } : {})}>
-                    <IconSymbol name="edit" size={20} color="#FFFFFF" />
-                  </Pressable>
-                  <Pressable
-                    onPress={() => {
-                      const confirmDelete = () => deleteMutation.mutate({ id: serverId });
-                      if (Platform.OS === "web") {
-                        // react-native-web'de çok butonlu Alert.alert güvenilir
-                        // çalışmıyor (bazı tarayıcılarda "Sil" tıklaması
-                        // tetiklenmiyordu); web'de tarayıcının kendi
-                        // onay penceresini kullanıyoruz.
-                        if (window.confirm("Bu tarifi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
-                          confirmDelete();
+                  <HoverTooltip label="Tarifi düzenle">
+                    <Pressable onPress={() => router.push({ pathname: "/recipe/create", params: { editId: String(recipe.id) } })} style={styles.heroButton} accessibilityLabel="Tarifi düzenle">
+                      <IconSymbol name="edit" size={20} color="#FFFFFF" />
+                    </Pressable>
+                  </HoverTooltip>
+                  <HoverTooltip label="Tarifi sil">
+                    <Pressable
+                      onPress={() => {
+                        const confirmDelete = () => deleteMutation.mutate({ id: serverId });
+                        if (Platform.OS === "web") {
+                          // react-native-web'de çok butonlu Alert.alert güvenilir
+                          // çalışmıyor (bazı tarayıcılarda "Sil" tıklaması
+                          // tetiklenmiyordu); web'de tarayıcının kendi
+                          // onay penceresini kullanıyoruz.
+                          if (window.confirm("Bu tarifi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.")) {
+                            confirmDelete();
+                          }
+                          return;
                         }
-                        return;
-                      }
-                      Alert.alert("Tarifi sil", "Bu tarifi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", [
-                        { text: "Vazgeç", style: "cancel" },
-                        { text: "Sil", style: "destructive", onPress: confirmDelete },
-                      ]);
-                    }}
-                    style={styles.heroButton}
-                    accessibilityLabel="Tarifi sil"
-                    {...(Platform.OS === "web" ? { title: "Tarifi sil" } : {})}
-                  >
-                    {deleteMutation.isPending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="delete" size={20} color="#FFFFFF" />}
-                  </Pressable>
+                        Alert.alert("Tarifi sil", "Bu tarifi kalıcı olarak silmek istediğinize emin misiniz? Bu işlem geri alınamaz.", [
+                          { text: "Vazgeç", style: "cancel" },
+                          { text: "Sil", style: "destructive", onPress: confirmDelete },
+                        ]);
+                      }}
+                      style={styles.heroButton}
+                      accessibilityLabel="Tarifi sil"
+                    >
+                      {deleteMutation.isPending ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="delete" size={20} color="#FFFFFF" />}
+                    </Pressable>
+                  </HoverTooltip>
                 </>
               )}
-              <Pressable onPress={() => setIsLanguagePickerOpen(true)} style={styles.heroButton} accessibilityLabel="Dil değiştir" {...(Platform.OS === "web" ? { title: "Dil değiştir" } : {})}>
-                {isTranslating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="translate" size={20} color="#FFFFFF" />}
-              </Pressable>
-              <Pressable onPress={() => toggleSaved(recipe.id)} style={styles.heroButton} accessibilityLabel={saved ? "Tarifi listeden çıkar" : "Tarifi listeme ekle"} {...(Platform.OS === "web" ? { title: saved ? "Listeden çıkar" : "Listeme ekle" } : {})}><IconSymbol name={saved ? "bookmark.fill" : "bookmark"} size={20} color="#FFFFFF" /></Pressable>
-              <Pressable onPress={() => router.push("/shopping")} style={styles.heroButton} accessibilityLabel="Alışveriş listesi" {...(Platform.OS === "web" ? { title: "Alışveriş listesine git" } : {})}><IconSymbol name="shopping-cart" size={20} color="#FFFFFF" /></Pressable>
+              <HoverTooltip label="Dil değiştir">
+                <Pressable onPress={() => setIsLanguagePickerOpen(true)} style={styles.heroButton} accessibilityLabel="Dil değiştir">
+                  {isTranslating ? <ActivityIndicator size="small" color="#FFFFFF" /> : <IconSymbol name="translate" size={20} color="#FFFFFF" />}
+                </Pressable>
+              </HoverTooltip>
+              <HoverTooltip label={saved ? "Listeden çıkar" : "Listeme ekle"}>
+                <Pressable onPress={() => toggleSaved(recipe.id)} style={styles.heroButton} accessibilityLabel={saved ? "Tarifi listeden çıkar" : "Tarifi listeme ekle"}><IconSymbol name={saved ? "bookmark.fill" : "bookmark"} size={20} color="#FFFFFF" /></Pressable>
+              </HoverTooltip>
+              <HoverTooltip label="Alışveriş listesine git">
+                <Pressable onPress={() => router.push("/shopping")} style={styles.heroButton} accessibilityLabel="Alışveriş listesi"><IconSymbol name="shopping-cart" size={20} color="#FFFFFF" /></Pressable>
+              </HoverTooltip>
             </View>
           </View>
           <View style={styles.heroTitleWrap}>

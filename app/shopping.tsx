@@ -20,10 +20,10 @@ export default function ShoppingScreen() {
       return;
     }
     const message = [
-      "Yemek Tarifim — Alışveriş Listem",
+      "Alınacaklar",
       "",
-      ...shoppingItems.map((item) => `□ ${item.name}${item.amount ? ` — ${item.amount}` : ""}`),
-    ].join("\\n");
+      ...shoppingItems.map((item) => `${item.name}${item.amount ? ` - ${item.amount}` : ""}`),
+    ].join("\n");
     try {
       await Share.share({ title: "Alışveriş listem", message });
     } catch {

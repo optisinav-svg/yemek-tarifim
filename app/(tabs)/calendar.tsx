@@ -183,7 +183,7 @@ export default function CalendarScreen() {
 
       <Text style={[styles.selectedDateText, { color: colors.muted }]}>{formatDayHeader(selectedDate)}</Text>
 
-      <ScrollView contentContainerStyle={styles.slotList}>
+      <ScrollView style={{ flex: 1 }} contentContainerStyle={styles.slotList}>
         {MEAL_SLOTS.map((slot) => {
           const slotEntries = getEntries(selectedDateKey, slot);
           return (
