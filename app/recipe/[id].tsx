@@ -8,6 +8,7 @@ import { ScreenContainer } from "@/components/screen-container";
 import { IconSymbol } from "@/components/ui/icon-symbol";
 import { useAppStore } from "@/lib/app-store";
 import { formatTotalTime, getRecipe, recipeImages, type Recipe } from "@/lib/recipe-data";
+import { resolveAssetUrl } from "@/lib/server-recipe-adapter";
 import { CountryFlagIcon } from "@/lib/flag-icons";
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc } from "@/lib/trpc";
@@ -42,12 +43,6 @@ type TranslateResult = {
   steps: string[];
 };
 
-function resolveAssetUrl(url: string) {
-  if (/^https?:\/\//i.test(url)) return url;
-  const baseUrl = getApiBaseUrl();
-  if (!baseUrl) return url;
-  return `${baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
-}
 
 async function readUriAsBase64(uri: string) {
   const response = await fetch(uri);

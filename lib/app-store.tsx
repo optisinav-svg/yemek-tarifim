@@ -5,6 +5,38 @@ import { formatShoppingAmount } from "./recipe-utils";
 import { createTRPCClient } from "./trpc";
 import { useAuth } from "@/hooks/use-auth";
 
+/** "tereyağı (üzeri için)" ve "tereyağı" gibi varyasyonların aynı malzeme
+ * sayılması için parantez içi açıklamaları temizler. */
+function normalizeIngredientDisplayName(name: string): string {
+  return name.replace(/\([^)]*\)/g, "").trim();
+}
+
+/** İki "MİKTAR birim" metnini birleştirir: birimler aynıysa sayıları
+ * toplar, farklıysa (veya sayısal değilse) yan yana ekler. */
+function mergeShoppingAmounts(a: string, b: string): string {
+  if (!a) return b;
+  if (!b) return a;
+  const parse = (s: string) => {
+    const match = s.trim().match(/^([\d.,]+)\s*(.*)$/);
+    if (!match) return null;
+    const value = Number(match[1].replace(",", "."));
+    if (!Number.isFinite(value)) return null;
+    return { value, unit: match[2].trim().toLocaleLowerCase("tr-TR") };
+  };
+  const pa = parse(a);
+  const pb = parse(b);
+  if (pa && pb && pa.unit === pb.unit) {
+    const total = Math.round((pa.value + pb.value) * 100) / 100;
+    return `${total} ${match_unit_case(a, pa.unit)}`;
+  }
+  return `${a} + ${b}`;
+}
+
+function match_unit_case(original: string, fallbackUnit: string): string {
+  const match = original.trim().match(/^[\d.,]+\s*(.*)$/);
+  return match?.[1]?.trim() || fallbackUnit;
+}
+
 type ShoppingItem = {
   id: string;
   name: string;
@@ -141,12 +173,13 @@ export function AppStoreProvider({ children }: { children: ReactNode }) {
       const next = [...current];
       recipe.ingredients.forEach((ingredient, index) => {
         const scaledAmount = formatShoppingAmount(ingredient, servings, recipe.servings);
-        const item = { name: ingredient.name, amount: scaledAmount };
-        const existing = next.find((entry) => entry.name.toLocaleLowerCase("tr-TR") === item.name.toLocaleLowerCase("tr-TR"));
+        const displayName = normalizeIngredientDisplayName(ingredient.name);
+        const matchKey = displayName.toLocaleLowerCase("tr-TR");
+        const existing = next.find((entry) => normalizeIngredientDisplayName(entry.name).toLocaleLowerCase("tr-TR") === matchKey);
         if (existing) {
-          existing.amount = existing.amount || item.amount;
+          existing.amount = mergeShoppingAmounts(existing.amount, scaledAmount);
         } else {
-          next.push({ id: `${recipe.id}-${index}-${Date.now()}`, ...item, checked: false });
+          next.push({ id: `${recipe.id}-${index}-${Date.now()}`, name: displayName, amount: scaledAmount, checked: false });
         }
       });
       persistLocal(savedRecipeIds, next);

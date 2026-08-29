@@ -37,10 +37,10 @@ const styles = StyleSheet.create({
   wrap: { position: "relative" },
   bubble: {
     position: "absolute",
-    bottom: "100%",
+    top: "100%",
     left: "50%",
     transform: [{ translateX: -40 }],
-    marginBottom: 6,
+    marginTop: 6,
     backgroundColor: "rgba(20,16,14,0.92)",
     borderRadius: 8,
     paddingHorizontal: 9,

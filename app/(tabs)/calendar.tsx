@@ -12,6 +12,7 @@ import { MEAL_SLOTS, MEAL_SLOT_LABELS, MAX_ENTRIES_PER_SLOT, useMealPlan, type M
 import { getApiBaseUrl } from "@/constants/oauth";
 import { trpc, createTRPCClient } from "@/lib/trpc";
 import { recipeImages, type Recipe } from "@/lib/recipe-data";
+import { resolveAssetUrl } from "@/lib/server-recipe-adapter";
 
 const DAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
 
@@ -37,13 +38,6 @@ function getWeekDates(weekStart: Date) {
 
 function formatDayHeader(date: Date) {
   return `${date.getDate()} ${date.toLocaleDateString("tr-TR", { month: "long" })}`;
-}
-
-function resolveAssetUrl(url: string) {
-  if (/^https?:\/\//i.test(url)) return url;
-  const baseUrl = getApiBaseUrl();
-  if (!baseUrl) return url;
-  return `${baseUrl}${url.startsWith("/") ? url : `/${url}`}`;
 }
 
 export default function CalendarScreen() {
@@ -280,12 +274,12 @@ const styles = StyleSheet.create({
   headerTitle: { fontSize: 24, fontWeight: "900" },
   weekNav: { flexDirection: "row", gap: 8 },
   navBtn: { width: 34, height: 34, borderRadius: 10, alignItems: "center", justifyContent: "center" },
-  dayStrip: { paddingHorizontal: 16, paddingVertical: 10, gap: 8 },
+  dayStrip: { paddingHorizontal: 16, paddingVertical: 4, gap: 8 },
   dayChip: { width: 52, height: 64, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center", marginHorizontal: 4, gap: 2 },
   dayChipLabel: { fontSize: 11, fontWeight: "700" },
   dayChipNum: { fontSize: 17, fontWeight: "900" },
   dot: { width: 5, height: 5, borderRadius: 3, marginTop: 2 },
-  selectedDateText: { paddingHorizontal: 20, fontSize: 13, fontWeight: "700", marginBottom: 6 },
+  selectedDateText: { paddingHorizontal: 20, fontSize: 13, fontWeight: "700", marginBottom: 2 },
   slotList: { paddingHorizontal: 16, paddingBottom: 30, gap: 10 },
   slotCard: { borderRadius: 16, borderWidth: 1, padding: 14 },
   slotHeaderRow: { flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 8 },
